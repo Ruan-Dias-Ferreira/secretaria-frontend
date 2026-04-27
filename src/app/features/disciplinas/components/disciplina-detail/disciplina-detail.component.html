@@ -1,0 +1,37 @@
+<div class="overlay" (click)="fechar()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Detalhes da Disciplina</h2>
+      <button class="close-btn" (click)="fechar()">&times;</button>
+    </div>
+
+    <div *ngIf="loading" class="loading">Carregando...</div>
+    <div *ngIf="errorMsg" class="empty">{{ errorMsg }}</div>
+
+    <dl *ngIf="!loading && disciplina">
+      <dt>ID</dt>
+      <dd>{{ disciplina.id }}</dd>
+
+      <dt>Nome</dt>
+      <dd>{{ disciplina.nome }}</dd>
+
+      <dt>Carga Horária</dt>
+      <dd>{{ disciplina.cargaHoraria }}h</dd>
+
+      <dt>Turma (ID)</dt>
+      <dd>#{{ disciplina.turmaId }}</dd>
+
+      <dt>Professor</dt>
+      <dd>
+        <span *ngIf="disciplina.professorLogin">
+          {{ disciplina.professorLogin }} (#{{ disciplina.professorId }})
+        </span>
+        <span *ngIf="!disciplina.professorLogin" class="muted">Sem professor vinculado</span>
+      </dd>
+    </dl>
+
+    <div class="actions">
+      <button (click)="fechar()">Fechar</button>
+    </div>
+  </div>
+</div>

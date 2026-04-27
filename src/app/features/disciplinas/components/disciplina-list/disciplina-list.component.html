@@ -1,0 +1,54 @@
+<div class="container">
+  <div class="header">
+    <h1>Disciplinas</h1>
+    <button class="btn-primary" (click)="abrirNovo()">+ Nova Disciplina</button>
+  </div>
+
+  <div *ngIf="loading" class="loading">Carregando...</div>
+
+  <table *ngIf="!loading && disciplinas.length > 0">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Nome</th>
+        <th>Carga Horária</th>
+        <th>Turma</th>
+        <th>Professor</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let disciplina of disciplinas">
+        <td>{{ disciplina.id }}</td>
+        <td>{{ disciplina.nome }}</td>
+        <td>{{ disciplina.cargaHoraria }}h</td>
+        <td>#{{ disciplina.turmaId }}</td>
+        <td>
+          <span *ngIf="disciplina.professorLogin">{{ disciplina.professorLogin }}</span>
+          <span *ngIf="!disciplina.professorLogin" class="muted">Sem professor</span>
+        </td>
+        <td class="actions">
+          <button class="btn-secondary" (click)="abrirDetalhe(disciplina.id)">Detalhes</button>
+          <button class="btn-secondary" (click)="abrirEdicao(disciplina.id)">Editar</button>
+          <button class="btn-danger" (click)="excluir(disciplina.id, disciplina.nome)">Excluir</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div *ngIf="!loading && disciplinas.length === 0" class="empty">
+    Nenhuma disciplina cadastrada.
+  </div>
+</div>
+
+<app-disciplina-form
+  *ngIf="modalAtivo === 'form'"
+  [disciplinaId]="disciplinaSelecionadaId"
+  (close)="fecharModal()">
+</app-disciplina-form>
+
+<app-disciplina-detail
+  *ngIf="modalAtivo === 'detail' && disciplinaSelecionadaId !== null"
+  [disciplinaId]="disciplinaSelecionadaId"
+  (close)="fecharModal()">
+</app-disciplina-detail>

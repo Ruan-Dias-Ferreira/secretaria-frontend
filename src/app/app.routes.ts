@@ -42,6 +42,12 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/turmas/components/turma-list/turma-list.component')
             .then(m => m.TurmaListComponent)
+      },
+      {
+        path: 'disciplinas',
+        loadComponent: () =>
+          import('./features/disciplinas/components/disciplina-list/disciplina-list.component')
+            .then(m => m.DisciplinaListComponent)
       }
     ]
   },

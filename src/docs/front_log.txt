@@ -1,0 +1,190 @@
+================================================================================
+PASSO 1 — CRUD Disciplina + suporte UsuarioResponse.id — Fase 3, item 2
+================================================================================
+
+VISÃO GERAL
+Implementado o CRUD completo de Disciplina no frontend Angular, espelhando o
+padrão canônico §19 (Aluno) e §16-Fase 3 (Turma). Inclui:
+
+- Refatoração do DisciplinaService para o padrão Subject + tap
+  (disciplinaAtualizada$) — antes era um service "magro" sem notificação de
+  escrita; agora dispara evento em save/update/delete.
+- Três componentes standalone: DisciplinaListComponent (4 estados +
+  auto-reload + modais inline), DisciplinaFormComponent (criar+editar com
+  dropdowns Turma + Professor via forkJoin), DisciplinaDetailComponent
+  (modal somente-leitura).
+- Rota lazy `/disciplinas` em app.routes.ts sob authGuard.
+
+DEPENDÊNCIA TRANSVERSAL — UsuarioResponse.id
+
+O backend `UsuarioResponse` (record Java) não expunha `id`, apenas `login` e
+`role`. O dropdown de professor no DisciplinaForm precisa do `id` numérico
+para popular o `professorId: Long` do DisciplinaRequest. Sem `id` no
+response, ficaria impossível mapear `<option>` → `professorId`.
+
+Solução: adicionado campo `Long id` no record `UsuarioResponse.java` (1ª
+posição). MapStruct mapeia automaticamente do `Usuario.id` (entity já tem
+`@Id @GeneratedValue`). No frontend, `UsuarioResponse.id` foi declarado
+como **opcional** (`id?: number`) porque o `AuthService.getUserFromToken()`
+constrói o objeto a partir do JWT (que tem só `sub` e `role`, sem id).
+
+ARQUIVOS CRIADOS/ALTERADOS
+
+================================================================================
+[BACKEND]
+Caminho: secretaria/src/main/java/com/escola/secretaria/dto/response/UsuarioResponse.java
+ANTES:
+  public record UsuarioResponse(
+          String login,
+          Role role
+  ) { }
+DEPOIS:
+  public record UsuarioResponse(
+          Long id,
+          String login,
+          Role role
+  ) { }
+MOTIVO: Permitir que o frontend obtenha o id do professor para o dropdown
+do DisciplinaForm. UsuarioMapper já mapeia automaticamente via MapStruct.
+
+================================================================================
+[FRONTEND]
+Caminho: secretaria-frontend/src/app/core/models/responses/usuario.response.ts
+DEPOIS:
+  import { Role } from "../enums/role.enum";
+
+  export interface UsuarioResponse{
+      id?: number;
+      login: string;
+      role: Role;
+  }
+MOTIVO: Espelhar backend. `id?` opcional porque AuthService constrói o
+objeto a partir do JWT (sem id no payload).
+
+================================================================================
+Caminho: secretaria-frontend/src/app/features/disciplinas/services/disciplina.service.ts
+RESUMO DA MUDANÇA: adicionado padrão Subject + tap (disciplinaAtualizada$),
+mantendo todos os métodos CRUD existentes. Pipe `tap()` em save/update/delete
+emite o evento; ListComponent inscreve em ngOnInit para auto-reload.
+
+================================================================================
+Caminho: secretaria-frontend/src/app/features/disciplinas/components/disciplina-list/disciplina-list.component.ts
+Caminho: secretaria-frontend/src/app/features/disciplinas/components/disciplina-list/disciplina-list.component.html
+Caminho: secretaria-frontend/src/app/features/disciplinas/components/disciplina-form/disciplina-form.component.ts
+Caminho: secretaria-frontend/src/app/features/disciplinas/components/disciplina-form/disciplina-form.component.html
+Caminho: secretaria-frontend/src/app/features/disciplinas/components/disciplina-detail/disciplina-detail.component.ts
+Caminho: secretaria-frontend/src/app/features/disciplinas/components/disciplina-detail/disciplina-detail.component.html
+
+Caminho: secretaria-frontend/src/app/app.routes.ts
+RESUMO DA MUDANÇA: adicionada rota `disciplinas` lazy (loadComponent),
+filha do bloco `canActivate: [authGuard]`.
+
+MACRO — Analogia e contexto
+
+Disciplina é a "matéria escolar" — pertence a uma Turma (1 Turma → N
+Disciplinas) e pode ter um Professor responsável (FK opcional). No
+fluxo escolar real, disciplinas são pré-requisito para Notas e Frequências,
+por isso vem antes desses CRUDs na ordem da Fase 3.
+
+O Form precisa de dois dropdowns dinâmicos:
+- Turma: obrigatório (validador `Validators.required`).
+- Professor: opcional (filtrado de `usuarios` por `role === PROFESSOR`).
+
+Carregamento: `forkJoin({ turmas, usuarios })` paraleliza as duas chamadas
+HTTP. Só depois (no callback) é que carrega a disciplina (modo edição).
+Alternativa inferior: chamar serial via `concatMap` — desperdiça tempo.
+
+FLUXO DE EXECUÇÃO
+
+  Usuário clica "Nova Disciplina"
+        │
+        ▼
+  abrirNovo() → modalAtivo = 'form', disciplinaSelecionadaId = null
+        │
+        ▼
+  <app-disciplina-form *ngIf="modalAtivo==='form'" [disciplinaId]=null>
+        │
+        ▼
+  ngOnInit → form criado → carregarDropdowns()
+        │
+        ▼
+  forkJoin({ turmas, usuarios }) ──── 2 req HTTP em paralelo
+        │
+        ▼
+  professores = usuarios.filter(u => u.role === Role.PROFESSOR)
+        │
+        ▼
+  Usuário preenche e submit
+        │
+        ▼
+  disciplinaService.save(request)
+        │
+        ▼
+  tap() dispara disciplinaAtualizada$
+        │
+        ▼
+  DisciplinaListComponent.ngOnInit subscribe → carregarDisciplinas()
+        │
+        ▼
+  Lista atualizada automaticamente, modal fecha via close.emit()
+
+MICRO — Destrinchamento
+
+1) `forkJoin({ turmas, usuarios })`
+   O QUÊ: combina N Observables; só emite UMA vez quando todos completam.
+   POR QUÊ: precisa das duas listas antes de renderizar dropdowns.
+   ALTERNATIVA INFERIOR: `combineLatest` — emite a cada update; aqui só
+   carregamos uma vez, então `forkJoin` é semanticamente correto.
+
+2) `professores = usuarios.filter(u => u.role === Role.PROFESSOR)`
+   O QUÊ: filtra usuarios no client após receber tudo.
+   POR QUÊ: backend não tem endpoint /usuario?role=PROFESSOR. Tradeoff:
+   trafega usuarios SECRETARIA/ALUNO inutilmente, mas evita criar endpoint
+   especializado nesta fase. Refatorar se a tabela usuario crescer muito.
+
+3) `[ngValue]="t.id"` em vez de `value="..."`
+   O QUÊ: liga o `<option>` a um valor TypeScript (number), não string.
+   POR QUÊ: `value` em select sempre serializa para string; o
+   DisciplinaRequest exige `turmaId: number`. `ngValue` preserva o tipo.
+   ALTERNATIVA INFERIOR: usar `value` e parsear com `+` na submissão —
+   coloca lógica de coerção desnecessária no componente.
+
+4) `professorId: raw.professorId ?? undefined`
+   O QUÊ: nullish coalescing — converte null (do form) para undefined.
+   POR QUÊ: backend espera `professorId` ausente quando não há professor;
+   `null` em JSON também funciona, mas `undefined` é mais idiomático em TS
+   para "campo não enviado". Coerente com `professorId?: number` no Request.
+
+5) `id?: number` em UsuarioResponse
+   O QUÊ: campo opcional na interface.
+   POR QUÊ: AuthService constrói UsuarioResponse a partir do JWT, que não
+   tem `id` no payload (sub=login, claim=role, exp). Marcar como
+   obrigatório quebraria o construtor do JWT.
+   TRADEOFF: quem precisa do id (DisciplinaForm) usa via UsuarioService.
+   findAll() — esse retorna do backend com id real.
+
+TABELA DE RESPONSABILIDADE
+
+| Responsabilidade                          | DisciplinaList | DisciplinaForm | DisciplinaDetail | DisciplinaService |
+|-------------------------------------------|----------------|----------------|------------------|-------------------|
+| Renderizar tabela + 4 estados             | ✅             | —              | —                | —                 |
+| Orquestrar modais (form/detail)           | ✅             | —              | —                | —                 |
+| Carregar dropdowns Turma+Professor        | —              | ✅ (forkJoin)  | —                | —                 |
+| Validar form (Reactive Forms)             | —              | ✅             | —                | —                 |
+| Notificar atualizações                    | —              | —              | —                | ✅ (Subject)      |
+| Chamadas HTTP CRUD                        | —              | —              | —                | ✅                |
+
+PRÓXIMO PASSO
+
+Fase 3 item 3 — CRUD Matrícula. Pré-requisitos atendidos:
+- Aluno (Fase 2) ✅
+- Turma (Fase 3.1) ✅
+
+MatriculaService precisa ter, além do CRUD padrão, o método
+`updateStatus(id, MatriculaStatusRequest)` que mapeia para
+`PATCH /matricula/:id/status`. UI: dropdown StatusMatricula com 4 valores
+(ATIVA, CONCLUIDA, DESISTENTE, TRANSFERIDO) + tratar 409 CONFLICT (aluno
+já com matrícula ATIVA no mesmo ano letivo).
+================================================================================
+FIM DO PASSO 1
+================================================================================

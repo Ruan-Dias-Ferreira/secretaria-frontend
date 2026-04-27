@@ -1,6 +1,7 @@
 import { Role } from "../enums/role.enum";
 
 export interface UsuarioResponse{
-    login:string;
-    role:Role;
+    id?: number;
+    login: string;
+    role: Role;
 }

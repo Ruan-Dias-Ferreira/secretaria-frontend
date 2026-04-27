@@ -1,0 +1,54 @@
+<div class="overlay" (click)="cancelar()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>{{ isEdicao ? 'Editar Disciplina' : 'Nova Disciplina' }}</h2>
+      <button class="close-btn" (click)="cancelar()">&times;</button>
+    </div>
+
+    <div *ngIf="errorMsg" class="alert">{{ errorMsg }}</div>
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" *ngIf="form">
+      <div class="form-grid">
+        <div class="full">
+          <label>Nome *</label>
+          <input formControlName="nome" [class.invalid]="campoInvalido('nome')" />
+          <div class="error" *ngIf="campoInvalido('nome')">Nome é obrigatório (mín. 2 caracteres).</div>
+        </div>
+
+        <div>
+          <label>Carga Horária (h) *</label>
+          <input type="number" formControlName="cargaHoraria" [class.invalid]="campoInvalido('cargaHoraria')" />
+          <div class="error" *ngIf="campoInvalido('cargaHoraria')">Informe carga horária válida.</div>
+        </div>
+
+        <div>
+          <label>Turma *</label>
+          <select formControlName="turmaId" [class.invalid]="campoInvalido('turmaId')">
+            <option [ngValue]="null" disabled>Selecione...</option>
+            <option *ngFor="let t of turmas" [ngValue]="t.id">
+              {{ t.nome }} ({{ t.anoLetivo }} - {{ t.turno }})
+            </option>
+          </select>
+          <div class="error" *ngIf="campoInvalido('turmaId')">Selecione uma turma.</div>
+        </div>
+
+        <div class="full">
+          <label>Professor (opcional)</label>
+          <select formControlName="professorId">
+            <option [ngValue]="null">Sem professor</option>
+            <option *ngFor="let p of professores" [ngValue]="p.id">
+              {{ p.login }}
+            </option>
+          </select>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button type="button" class="btn-secondary" (click)="cancelar()">Cancelar</button>
+        <button type="submit" class="btn-primary" [disabled]="loading">
+          {{ loading ? 'Salvando...' : (isEdicao ? 'Atualizar' : 'Salvar') }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
