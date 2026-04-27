@@ -1,0 +1,50 @@
+<div class="overlay" (click)="cancelar()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>{{ isEdicao ? 'Editar Turma' : 'Nova Turma' }}</h2>
+      <button class="close-btn" (click)="cancelar()">&times;</button>
+    </div>
+
+    <div *ngIf="errorMsg" class="alert">{{ errorMsg }}</div>
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" *ngIf="form">
+      <div class="form-grid">
+        <div class="full">
+          <label>Nome *</label>
+          <input formControlName="nome" [class.invalid]="campoInvalido('nome')" />
+          <div class="error" *ngIf="campoInvalido('nome')">Nome é obrigatório (mín. 2 caracteres).</div>
+        </div>
+
+        <div>
+          <label>Ano Letivo *</label>
+          <input type="number" formControlName="anoLetivo" [class.invalid]="campoInvalido('anoLetivo')" />
+          <div class="error" *ngIf="campoInvalido('anoLetivo')">Informe um ano válido.</div>
+        </div>
+
+        <div>
+          <label>Turno *</label>
+          <select formControlName="turno" [class.invalid]="campoInvalido('turno')">
+            <option value="MANHA">Manhã</option>
+            <option value="TARDE">Tarde</option>
+            <option value="NOITE">Noite</option>
+            <option value="INTEGRAL">Integral</option>
+          </select>
+          <div class="error" *ngIf="campoInvalido('turno')">Selecione um turno.</div>
+        </div>
+
+        <div class="full">
+          <label>Curso *</label>
+          <input formControlName="curso" [class.invalid]="campoInvalido('curso')" />
+          <div class="error" *ngIf="campoInvalido('curso')">Curso é obrigatório.</div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button type="button" class="btn-secondary" (click)="cancelar()">Cancelar</button>
+        <button type="submit" class="btn-primary" [disabled]="loading">
+          {{ loading ? 'Salvando...' : (isEdicao ? 'Atualizar' : 'Salvar') }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

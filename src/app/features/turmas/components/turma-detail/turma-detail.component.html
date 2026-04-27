@@ -1,0 +1,32 @@
+<div class="overlay" (click)="fechar()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Detalhes da Turma</h2>
+      <button class="close-btn" (click)="fechar()">&times;</button>
+    </div>
+
+    <div *ngIf="loading" class="loading">Carregando...</div>
+    <div *ngIf="errorMsg" class="empty">{{ errorMsg }}</div>
+
+    <dl *ngIf="!loading && turma">
+      <dt>ID</dt>
+      <dd>{{ turma.id }}</dd>
+
+      <dt>Nome</dt>
+      <dd>{{ turma.nome }}</dd>
+
+      <dt>Ano Letivo</dt>
+      <dd>{{ turma.anoLetivo }}</dd>
+
+      <dt>Turno</dt>
+      <dd>{{ turma.turno }}</dd>
+
+      <dt>Curso</dt>
+      <dd>{{ turma.curso }}</dd>
+    </dl>
+
+    <div class="actions">
+      <button (click)="fechar()">Fechar</button>
+    </div>
+  </div>
+</div>

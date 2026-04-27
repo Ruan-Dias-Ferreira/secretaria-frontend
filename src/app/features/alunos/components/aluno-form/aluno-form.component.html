@@ -1,0 +1,74 @@
+<div class="overlay" (click)="cancelar()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>{{ isEdicao ? 'Editar Aluno' : 'Novo Aluno' }}</h2>
+      <button class="close-btn" (click)="cancelar()">&times;</button>
+    </div>
+
+    <div *ngIf="errorMsg" class="alert">{{ errorMsg }}</div>
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" *ngIf="form">
+      <div class="form-grid">
+        <div class="full">
+          <label>Nome *</label>
+          <input formControlName="nome" [class.invalid]="campoInvalido('nome')" />
+          <div class="error" *ngIf="campoInvalido('nome')">Nome é obrigatório (mín. 3 caracteres).</div>
+        </div>
+
+        <div>
+          <label>CPF *</label>
+          <input formControlName="cpf" [class.invalid]="campoInvalido('cpf')" />
+          <div class="error" *ngIf="campoInvalido('cpf')">CPF é obrigatório.</div>
+        </div>
+
+        <div>
+          <label>RG *</label>
+          <input formControlName="rg" [class.invalid]="campoInvalido('rg')" />
+          <div class="error" *ngIf="campoInvalido('rg')">RG é obrigatório.</div>
+        </div>
+
+        <div>
+          <label>Data de Nascimento *</label>
+          <input type="date" formControlName="dataNascimento" [class.invalid]="campoInvalido('dataNascimento')" />
+          <div class="error" *ngIf="campoInvalido('dataNascimento')">Informe a data de nascimento.</div>
+        </div>
+
+        <div>
+          <label>Telefone *</label>
+          <input formControlName="telefone" [class.invalid]="campoInvalido('telefone')" />
+          <div class="error" *ngIf="campoInvalido('telefone')">Telefone é obrigatório.</div>
+        </div>
+
+        <div class="full">
+          <label>Email *</label>
+          <input type="email" formControlName="email" [class.invalid]="campoInvalido('email')" />
+          <div class="error" *ngIf="campoInvalido('email')">Informe um email válido.</div>
+        </div>
+
+        <div class="full">
+          <label>Endereço *</label>
+          <input formControlName="endereco" [class.invalid]="campoInvalido('endereco')" />
+          <div class="error" *ngIf="campoInvalido('endereco')">Endereço é obrigatório.</div>
+        </div>
+
+        <div>
+          <label>Nome da Mãe *</label>
+          <input formControlName="nomeMae" [class.invalid]="campoInvalido('nomeMae')" />
+          <div class="error" *ngIf="campoInvalido('nomeMae')">Informe o nome da mãe.</div>
+        </div>
+
+        <div>
+          <label>Nome do Pai</label>
+          <input formControlName="nomePai" />
+        </div>
+      </div>
+
+      <div class="actions">
+        <button type="button" class="btn-secondary" (click)="cancelar()">Cancelar</button>
+        <button type="submit" class="btn-primary" [disabled]="loading">
+          {{ loading ? 'Salvando...' : (isEdicao ? 'Atualizar' : 'Salvar') }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

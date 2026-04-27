@@ -1,0 +1,5 @@
+
+export enum SituacaoFrequencia {
+  REGULAR = 'REGULAR',
+  REPROVADO_FREQUENCIA = 'REPROVADO_FREQUENCIA'
+}

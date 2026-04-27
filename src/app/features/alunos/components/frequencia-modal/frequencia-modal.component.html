@@ -1,0 +1,41 @@
+<div class="overlay" (click)="fechar()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Frequência — Aluno #{{ alunoId }}</h2>
+      <button class="close-btn" (click)="fechar()">&times;</button>
+    </div>
+
+    <div *ngIf="loading" class="loading">Carregando frequências...</div>
+
+    <div *ngIf="errorMsg" class="empty">{{ errorMsg }}</div>
+
+    <div *ngIf="!loading && frequencias.length === 0 && !errorMsg" class="empty">
+      Nenhum registro de frequência.
+    </div>
+
+    <table *ngIf="!loading && frequencias.length > 0">
+      <thead>
+        <tr>
+          <th>Disciplina</th>
+          <th>Carga Horária</th>
+          <th>Presenças</th>
+          <th>Percentual</th>
+          <th>Situação</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let f of frequencias">
+          <td>{{ f.nomeDisciplina }}</td>
+          <td>{{ f.cargaHoraria }}h</td>
+          <td>{{ f.presencas }}</td>
+          <td>{{ f.percentual }}%</td>
+          <td><span [class]="badgeClass(f.situacao)">{{ f.situacao }}</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="actions">
+      <button (click)="fechar()">Fechar</button>
+    </div>
+  </div>
+</div>

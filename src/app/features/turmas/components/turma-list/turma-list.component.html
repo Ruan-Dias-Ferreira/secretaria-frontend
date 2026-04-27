@@ -1,0 +1,51 @@
+<div class="container">
+  <div class="header">
+    <h1>Turmas</h1>
+    <button class="btn-primary" (click)="abrirNovo()">+ Nova Turma</button>
+  </div>
+
+  <div *ngIf="loading" class="loading">Carregando...</div>
+
+  <table *ngIf="!loading && turmas.length > 0">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Nome</th>
+        <th>Ano Letivo</th>
+        <th>Turno</th>
+        <th>Curso</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let turma of turmas">
+        <td>{{ turma.id }}</td>
+        <td>{{ turma.nome }}</td>
+        <td>{{ turma.anoLetivo }}</td>
+        <td>{{ turma.turno }}</td>
+        <td>{{ turma.curso }}</td>
+        <td class="actions">
+          <button class="btn-secondary" (click)="abrirDetalhe(turma.id)">Detalhes</button>
+          <button class="btn-secondary" (click)="abrirEdicao(turma.id)">Editar</button>
+          <button class="btn-danger" (click)="excluir(turma.id, turma.nome)">Excluir</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div *ngIf="!loading && turmas.length === 0" class="empty">
+    Nenhuma turma cadastrada.
+  </div>
+</div>
+
+<app-turma-form
+  *ngIf="modalAtivo === 'form'"
+  [turmaId]="turmaSelecionadaId"
+  (close)="fecharModal()">
+</app-turma-form>
+
+<app-turma-detail
+  *ngIf="modalAtivo === 'detail' && turmaSelecionadaId !== null"
+  [turmaId]="turmaSelecionadaId"
+  (close)="fecharModal()">
+</app-turma-detail>

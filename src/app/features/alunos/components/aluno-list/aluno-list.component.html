@@ -1,0 +1,63 @@
+<div class="container">
+  <div class="header">
+    <h1>Alunos</h1>
+    <button class="btn-primary" (click)="abrirNovo()">+ Novo Aluno</button>
+  </div>
+
+  <div *ngIf="loading" class="loading">Carregando...</div>
+
+  <table *ngIf="!loading && alunos.length > 0">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Nome</th>
+        <th>CPF</th>
+        <th>Email</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let aluno of alunos">
+        <td>{{ aluno.id }}</td>
+        <td>{{ aluno.nome }}</td>
+        <td>{{ aluno.cpf }}</td>
+        <td>{{ aluno.email }}</td>
+        <td class="actions">
+          <button class="btn-secondary" (click)="abrirDetalhe(aluno.id)">Detalhes</button>
+          <button class="btn-secondary" (click)="abrirBoletim(aluno.id)">Boletim</button>
+          <button class="btn-secondary" (click)="abrirFrequencia(aluno.id)">Frequência</button>
+          <button class="btn-secondary" (click)="abrirEdicao(aluno.id)">Editar</button>
+          <button class="btn-danger" (click)="excluir(aluno.id, aluno.nome)">Excluir</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div *ngIf="!loading && alunos.length === 0" class="empty">
+    Nenhum aluno cadastrado.
+  </div>
+</div>
+
+<app-aluno-form
+  *ngIf="modalAtivo === 'form'"
+  [alunoId]="alunoSelecionadoId"
+  (close)="fecharModal()">
+</app-aluno-form>
+
+<app-aluno-detail
+  *ngIf="modalAtivo === 'detail' && alunoSelecionadoId !== null"
+  [alunoId]="alunoSelecionadoId"
+  (close)="fecharModal()">
+</app-aluno-detail>
+
+<app-boletim-modal
+  *ngIf="modalAtivo === 'boletim' && alunoSelecionadoId !== null"
+  [alunoId]="alunoSelecionadoId"
+  (close)="fecharModal()">
+</app-boletim-modal>
+
+<app-frequencia-modal
+  *ngIf="modalAtivo === 'frequencia' && alunoSelecionadoId !== null"
+  [alunoId]="alunoSelecionadoId"
+  (close)="fecharModal()">
+</app-frequencia-modal>

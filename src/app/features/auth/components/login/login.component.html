@@ -1,0 +1,54 @@
+
+
+<div class="login-wrapper">
+  <div class="login-card">
+
+    <h1 class="login-title">Secretaria Escolar</h1>
+    <p class="login-subtitle">Acesse sua conta</p>
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+
+      <div class="field">
+        <label for="login">Login</label>
+        <input
+          id="login"
+          type="text"
+          formControlName="login"
+          placeholder="Digite seu login"
+          autocomplete="username"
+        />
+        <span class="field-error"
+              *ngIf="login?.invalid && login?.touched">
+          Login é obrigatório.
+        </span>
+      </div>
+
+      <div class="field">
+        <label for="senha">Senha</label>
+        <input
+          id="senha"
+          type="password"
+          formControlName="senha"
+          placeholder="Digite sua senha"
+          autocomplete="current-password"
+        />
+        <span class="field-error"
+              *ngIf="senha?.invalid && senha?.touched">
+          Senha inválida — mínimo 6 caracteres.
+        </span>
+      </div>
+
+      <span class="submit-error" *ngIf="errorMsg">
+        {{ errorMsg }}
+      </span>
+
+      <button
+        type="submit"
+        class="btn-submit"
+        [disabled]="loading">
+        {{ loading ? 'Entrando...' : 'Entrar' }}
+      </button>
+
+    </form>
+  </div>
+</div>

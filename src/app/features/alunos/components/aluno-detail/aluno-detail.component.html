@@ -1,0 +1,32 @@
+<div class="overlay" (click)="fechar()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Detalhes do Aluno</h2>
+      <button class="close-btn" (click)="fechar()">&times;</button>
+    </div>
+
+    <div *ngIf="loading" class="loading">Carregando...</div>
+
+    <div *ngIf="!loading && aluno">
+      <dl>
+        <dt>ID</dt>
+        <dd>{{ aluno.id }}</dd>
+
+        <dt>Nome</dt>
+        <dd>{{ aluno.nome }}</dd>
+
+        <dt>CPF</dt>
+        <dd>{{ aluno.cpf }}</dd>
+
+        <dt>Email</dt>
+        <dd>{{ aluno.email }}</dd>
+      </dl>
+    </div>
+
+    <div *ngIf="errorMsg" class="loading">{{ errorMsg }}</div>
+
+    <div class="actions">
+      <button (click)="fechar()">Fechar</button>
+    </div>
+  </div>
+</div>
