@@ -1,0 +1,32 @@
+<div class="overlay" (click)="fechar()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Detalhes da Matrícula</h2>
+      <button class="close-btn" (click)="fechar()">&times;</button>
+    </div>
+
+    <div *ngIf="loading" class="loading">Carregando...</div>
+    <div *ngIf="errorMsg" class="empty">{{ errorMsg }}</div>
+
+    <dl *ngIf="!loading && matricula">
+      <dt>ID</dt>
+      <dd>{{ matricula.id }}</dd>
+
+      <dt>Aluno ID</dt>
+      <dd>{{ matricula.alunoId }}</dd>
+
+      <dt>Turma ID</dt>
+      <dd>{{ matricula.turmaId }}</dd>
+
+      <dt>Ano Letivo</dt>
+      <dd>{{ matricula.anoLetivo }}</dd>
+
+      <dt>Status</dt>
+      <dd>{{ matricula.status }}</dd>
+    </dl>
+
+    <div class="actions">
+      <button (click)="fechar()">Fechar</button>
+    </div>
+  </div>
+</div>

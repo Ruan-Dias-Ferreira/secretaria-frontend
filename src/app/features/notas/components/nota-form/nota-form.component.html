@@ -1,0 +1,51 @@
+<div class="overlay" (click)="cancelar()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>{{ isEdicao ? 'Editar Nota' : 'Nova Nota' }}</h2>
+      <button class="close-btn" (click)="cancelar()">&times;</button>
+    </div>
+
+    <div *ngIf="errorMsg" class="alert">{{ errorMsg }}</div>
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" *ngIf="form">
+      <div class="form-grid">
+        <div class="full">
+          <label>Aluno *</label>
+          <select formControlName="alunoId" [class.invalid]="campoInvalido('alunoId')">
+            <option [ngValue]="null" disabled>Selecione um aluno</option>
+            <option *ngFor="let a of alunos" [ngValue]="a.id">{{ a.nome }}</option>
+          </select>
+          <div class="error" *ngIf="campoInvalido('alunoId')">Selecione um aluno.</div>
+        </div>
+
+        <div class="full">
+          <label>Disciplina *</label>
+          <select formControlName="disciplinaId" [class.invalid]="campoInvalido('disciplinaId')">
+            <option [ngValue]="null" disabled>Selecione uma disciplina</option>
+            <option *ngFor="let d of disciplinas" [ngValue]="d.id">{{ d.nome }}</option>
+          </select>
+          <div class="error" *ngIf="campoInvalido('disciplinaId')">Selecione uma disciplina.</div>
+        </div>
+
+        <div>
+          <label>Bimestre * (1–4)</label>
+          <input type="number" formControlName="bimestre" [class.invalid]="campoInvalido('bimestre')" min="1" max="4" />
+          <div class="error" *ngIf="campoInvalido('bimestre')">Bimestre deve ser de 1 a 4.</div>
+        </div>
+
+        <div>
+          <label>Valor * (0–10)</label>
+          <input type="number" formControlName="valor" [class.invalid]="campoInvalido('valor')" min="0" max="10" step="0.1" />
+          <div class="error" *ngIf="campoInvalido('valor')">Valor deve ser de 0 a 10.</div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button type="button" class="btn-secondary" (click)="cancelar()">Cancelar</button>
+        <button type="submit" class="btn-primary" [disabled]="loading">
+          {{ loading ? 'Salvando...' : (isEdicao ? 'Atualizar' : 'Salvar') }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

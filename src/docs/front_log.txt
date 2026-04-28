@@ -1,190 +1,80 @@
 ================================================================================
-PASSO 1 — CRUD Disciplina + suporte UsuarioResponse.id — Fase 3, item 2
+PASSO 1 — Conclusão da Fase 3 (Matrículas, Notas, Frequências, Documentos, Usuários)
 ================================================================================
 
 VISÃO GERAL
-Implementado o CRUD completo de Disciplina no frontend Angular, espelhando o
-padrão canônico §19 (Aluno) e §16-Fase 3 (Turma). Inclui:
-
-- Refatoração do DisciplinaService para o padrão Subject + tap
-  (disciplinaAtualizada$) — antes era um service "magro" sem notificação de
-  escrita; agora dispara evento em save/update/delete.
-- Três componentes standalone: DisciplinaListComponent (4 estados +
-  auto-reload + modais inline), DisciplinaFormComponent (criar+editar com
-  dropdowns Turma + Professor via forkJoin), DisciplinaDetailComponent
-  (modal somente-leitura).
-- Rota lazy `/disciplinas` em app.routes.ts sob authGuard.
-
-DEPENDÊNCIA TRANSVERSAL — UsuarioResponse.id
-
-O backend `UsuarioResponse` (record Java) não expunha `id`, apenas `login` e
-`role`. O dropdown de professor no DisciplinaForm precisa do `id` numérico
-para popular o `professorId: Long` do DisciplinaRequest. Sem `id` no
-response, ficaria impossível mapear `<option>` → `professorId`.
-
-Solução: adicionado campo `Long id` no record `UsuarioResponse.java` (1ª
-posição). MapStruct mapeia automaticamente do `Usuario.id` (entity já tem
-`@Id @GeneratedValue`). No frontend, `UsuarioResponse.id` foi declarado
-como **opcional** (`id?: number`) porque o `AuthService.getUserFromToken()`
-constrói o objeto a partir do JWT (que tem só `sub` e `role`, sem id).
+Implementação massiva concluindo a Fase 3 do projeto de Secretaria Escolar no frontend. Foram gerados componentes de Listagem, Formulário e Detalhes (onde aplicável) para as features pendentes: Matrícula, Nota, Frequência, Documento e Usuário. Além disso, as rotas foram devidamente registradas no `app.routes.ts` com proteção via `authGuard` e carregamento assíncrono (lazy loading via `loadComponent`). Por fim, foram corrigidos imports em `app.config.ts`, criados stubs mínimos para componentes de apoio faltantes (HomeComponent e UnauthorizedPageComponent) e instalado o pacote `@angular/animations` para corrigir erros de compilação. Tudo feito mantendo estrita obediência às Regras de Ouro e à padronização estrutural estabelecida.
 
 ARQUIVOS CRIADOS/ALTERADOS
-
-================================================================================
-[BACKEND]
-Caminho: secretaria/src/main/java/com/escola/secretaria/dto/response/UsuarioResponse.java
-ANTES:
-  public record UsuarioResponse(
-          String login,
-          Role role
-  ) { }
-DEPOIS:
-  public record UsuarioResponse(
-          Long id,
-          String login,
-          Role role
-  ) { }
-MOTIVO: Permitir que o frontend obtenha o id do professor para o dropdown
-do DisciplinaForm. UsuarioMapper já mapeia automaticamente via MapStruct.
-
-================================================================================
-[FRONTEND]
-Caminho: secretaria-frontend/src/app/core/models/responses/usuario.response.ts
-DEPOIS:
-  import { Role } from "../enums/role.enum";
-
-  export interface UsuarioResponse{
-      id?: number;
-      login: string;
-      role: Role;
-  }
-MOTIVO: Espelhar backend. `id?` opcional porque AuthService constrói o
-objeto a partir do JWT (sem id no payload).
-
-================================================================================
-Caminho: secretaria-frontend/src/app/features/disciplinas/services/disciplina.service.ts
-RESUMO DA MUDANÇA: adicionado padrão Subject + tap (disciplinaAtualizada$),
-mantendo todos os métodos CRUD existentes. Pipe `tap()` em save/update/delete
-emite o evento; ListComponent inscreve em ngOnInit para auto-reload.
-
-================================================================================
-Caminho: secretaria-frontend/src/app/features/disciplinas/components/disciplina-list/disciplina-list.component.ts
-Caminho: secretaria-frontend/src/app/features/disciplinas/components/disciplina-list/disciplina-list.component.html
-Caminho: secretaria-frontend/src/app/features/disciplinas/components/disciplina-form/disciplina-form.component.ts
-Caminho: secretaria-frontend/src/app/features/disciplinas/components/disciplina-form/disciplina-form.component.html
-Caminho: secretaria-frontend/src/app/features/disciplinas/components/disciplina-detail/disciplina-detail.component.ts
-Caminho: secretaria-frontend/src/app/features/disciplinas/components/disciplina-detail/disciplina-detail.component.html
-
-Caminho: secretaria-frontend/src/app/app.routes.ts
-RESUMO DA MUDANÇA: adicionada rota `disciplinas` lazy (loadComponent),
-filha do bloco `canActivate: [authGuard]`.
+Caminho: src/app/features/matriculas/components/matricula-list/matricula-list.component.ts (e html)
+Caminho: src/app/features/matriculas/components/matricula-form/matricula-form.component.ts (e html)
+Caminho: src/app/features/matriculas/components/matricula-detail/matricula-detail.component.ts (e html)
+Caminho: src/app/features/notas/components/nota-list/nota-list.component.ts (e html)
+Caminho: src/app/features/notas/components/nota-form/nota-form.component.ts (e html)
+Caminho: src/app/features/frequencias/components/frequencia-list/frequencia-list.component.ts (e html)
+Caminho: src/app/features/frequencias/components/frequencia-form/frequencia-form.component.ts (e html)
+Caminho: src/app/features/documentos/components/documento-list/documento-list.component.ts (e html)
+Caminho: src/app/features/documentos/components/documento-form/documento-form.component.ts (e html)
+Caminho: src/app/features/usuarios/components/usuario-list/usuario-list.component.ts (e html)
+Caminho: src/app/features/usuarios/components/usuario-form/usuario-form.component.ts (e html)
+Caminho: src/app/app.routes.ts (editado)
+Caminho: src/app/shared/components/unauthorized-page/unauthorized-page.component.ts (criado)
+Caminho: src/app/features/dashboard/components/home/home.component.ts (criado)
+Caminho: src/app/app.config.ts (editado)
 
 MACRO — Analogia e contexto
-
-Disciplina é a "matéria escolar" — pertence a uma Turma (1 Turma → N
-Disciplinas) e pode ter um Professor responsável (FK opcional). No
-fluxo escolar real, disciplinas são pré-requisito para Notas e Frequências,
-por isso vem antes desses CRUDs na ordem da Fase 3.
-
-O Form precisa de dois dropdowns dinâmicos:
-- Turma: obrigatório (validador `Validators.required`).
-- Professor: opcional (filtrado de `usuarios` por `role === PROFESSOR`).
-
-Carregamento: `forkJoin({ turmas, usuarios })` paraleliza as duas chamadas
-HTTP. Só depois (no callback) é que carrega a disciplina (modo edição).
-Alternativa inferior: chamar serial via `concatMap` — desperdiça tempo.
+Imagine uma fábrica de automóveis onde as linhas de montagem do motor (backend) já foram construídas e testadas, e agora instalamos o painel de controle (frontend) que o operador vai usar. Cada painel de um setor (Matrículas, Notas, Frequências) deve ter os mesmos botões e a mesma estética baseada num template rigoroso (o padrão canônico da "Turma"). Não inovamos no painel; apenas replicamos a mesma interface de botões (modais, 4 estados de tela, Subjects de atualização) ligando as chaves certas a cada serviço da fábrica.
 
 FLUXO DE EXECUÇÃO
+[Usuário entra na Rota] --> [AuthGuard valida token] --> [Carrega ListComponent correspondente]
+       |
+       v
+[ListComponent] --> [NgOnInit: assina *Atualizado$ e chama findAll()]
+       |
+       v
+[Modal Form] --> [forkJoin carrega dropdowns] --> [Usuário preenche dados e salva]
+       |
+       v
+[Service POST/PUT] --> [tap(Subject.next())] --> [ListComponent re-renderiza tabela]
 
-  Usuário clica "Nova Disciplina"
-        │
-        ▼
-  abrirNovo() → modalAtivo = 'form', disciplinaSelecionadaId = null
-        │
-        ▼
-  <app-disciplina-form *ngIf="modalAtivo==='form'" [disciplinaId]=null>
-        │
-        ▼
-  ngOnInit → form criado → carregarDropdowns()
-        │
-        ▼
-  forkJoin({ turmas, usuarios }) ──── 2 req HTTP em paralelo
-        │
-        ▼
-  professores = usuarios.filter(u => u.role === Role.PROFESSOR)
-        │
-        ▼
-  Usuário preenche e submit
-        │
-        ▼
-  disciplinaService.save(request)
-        │
-        ▼
-  tap() dispara disciplinaAtualizada$
-        │
-        ▼
-  DisciplinaListComponent.ngOnInit subscribe → carregarDisciplinas()
-        │
-        ▼
-  Lista atualizada automaticamente, modal fecha via close.emit()
+MICRO — Destrinchamento linha a linha
 
-MICRO — Destrinchamento
+1. Matrícula:
+   - Adicionado dropdown status para permitir alteração rápida através de PATCH.
+   - Componentes integrados com `forkJoin` no Form para baixar lista de Alunos e Turmas simultaneamente antes de exibir o modal. Evita requests em cascata.
 
-1) `forkJoin({ turmas, usuarios })`
-   O QUÊ: combina N Observables; só emite UMA vez quando todos completam.
-   POR QUÊ: precisa das duas listas antes de renderizar dropdowns.
-   ALTERNATIVA INFERIOR: `combineLatest` — emite a cada update; aqui só
-   carregamos uma vez, então `forkJoin` é semanticamente correto.
+2. Notas:
+   - Apegamo-nos à regra estrita de que a nota numéricamente tratada é nomeada como `valor` no Request (não `nota`).
+   - A `SituacaoNota` (Aprovado/Reprovado/Recuperação) nunca é exposta no formulário, uma vez que é estritamente calculada pelo backend ao listar as notas (no Response).
 
-2) `professores = usuarios.filter(u => u.role === Role.PROFESSOR)`
-   O QUÊ: filtra usuarios no client após receber tudo.
-   POR QUÊ: backend não tem endpoint /usuario?role=PROFESSOR. Tradeoff:
-   trafega usuarios SECRETARIA/ALUNO inutilmente, mas evita criar endpoint
-   especializado nesta fase. Refatorar se a tabela usuario crescer muito.
+3. Frequência:
+   - Campo boolean predefinido para `presente` com um checkbox amigável.
+   - Dropdowns com Alunos e Disciplinas utilizando `forkJoin`.
 
-3) `[ngValue]="t.id"` em vez de `value="..."`
-   O QUÊ: liga o `<option>` a um valor TypeScript (number), não string.
-   POR QUÊ: `value` em select sempre serializa para string; o
-   DisciplinaRequest exige `turmaId: number`. `ngValue` preserva o tipo.
-   ALTERNATIVA INFERIOR: usar `value` e parsear com `+` na submissão —
-   coloca lógica de coerção desnecessária no componente.
+4. Documentos:
+   - Respeitamos o escopo: Documentos não se edita (sem edição, sem `@Input()` id no Form) nem expõe `dataEmissao` para preenchimento. Apenas criação (POST) e deleção (DELETE).
 
-4) `professorId: raw.professorId ?? undefined`
-   O QUÊ: nullish coalescing — converte null (do form) para undefined.
-   POR QUÊ: backend espera `professorId` ausente quando não há professor;
-   `null` em JSON também funciona, mas `undefined` é mais idiomático em TS
-   para "campo não enviado". Coerente com `professorId?: number` no Request.
+5. Usuários:
+   - Validação de senha estrita no Formulario: a senha não é read-populated (`patchValue`) no modo edição por questões de segurança (campo esvazia e só deve preencher ao re-inserir).
+   - Utilização de `Roles` via Enum.
 
-5) `id?: number` em UsuarioResponse
-   O QUÊ: campo opcional na interface.
-   POR QUÊ: AuthService constrói UsuarioResponse a partir do JWT, que não
-   tem `id` no payload (sub=login, claim=role, exp). Marcar como
-   obrigatório quebraria o construtor do JWT.
-   TRADEOFF: quem precisa do id (DisciplinaForm) usa via UsuarioService.
-   findAll() — esse retorna do backend com id real.
+6. Correção de Roteamento e Dependências:
+   - `app.routes.ts`: Antes da edição, faltava apontar as 5 rotas criadas. Agora utilizam `loadComponent` mantendo as regras de lazy loading e encapsulamento em `children` protegido por `authGuard`.
+   - Remoção de imports duplicados no `app.config.ts`.
+   - Adicionado mock para o `UnauthorizedPageComponent` e `HomeComponent` para garantir que as rotas raízes do `app.routes.ts` compilam com êxito sem erro 404 de módulo interno.
+   - Execução do comando `npm install @angular/animations` corrigindo falha originária de tentativa de carregamento da lib ausente.
 
 TABELA DE RESPONSABILIDADE
-
-| Responsabilidade                          | DisciplinaList | DisciplinaForm | DisciplinaDetail | DisciplinaService |
-|-------------------------------------------|----------------|----------------|------------------|-------------------|
-| Renderizar tabela + 4 estados             | ✅             | —              | —                | —                 |
-| Orquestrar modais (form/detail)           | ✅             | —              | —                | —                 |
-| Carregar dropdowns Turma+Professor        | —              | ✅ (forkJoin)  | —                | —                 |
-| Validar form (Reactive Forms)             | —              | ✅             | —                | —                 |
-| Notificar atualizações                    | —              | —              | —                | ✅ (Subject)      |
-| Chamadas HTTP CRUD                        | —              | —              | —                | ✅                |
+| Responsabilidade | Este arquivo | Outro |
+| --- | --- | --- |
+| Formulários Reativos | Forms Components de cada feature | N/A |
+| Apresentação de Dados e Listagens | List Components de cada feature | N/A |
+| Visualização Apenas-Leitura | Detail Components | N/A |
+| Roteamento Central e Lazy Loading | app.routes.ts | N/A |
+| Tratamento de Erros e Rotas Quebradas | UnauthorizedPageComponent / ErrorInterceptor | backend e Guards |
 
 PRÓXIMO PASSO
-
-Fase 3 item 3 — CRUD Matrícula. Pré-requisitos atendidos:
-- Aluno (Fase 2) ✅
-- Turma (Fase 3.1) ✅
-
-MatriculaService precisa ter, além do CRUD padrão, o método
-`updateStatus(id, MatriculaStatusRequest)` que mapeia para
-`PATCH /matricula/:id/status`. UI: dropdown StatusMatricula com 4 valores
-(ATIVA, CONCLUIDA, DESISTENTE, TRANSFERIDO) + tratar 409 CONFLICT (aluno
-já com matrícula ATIVA no mesmo ano letivo).
+Iniciar Fase 4: Aplicar o controle refinado de permissões (`RoleGuard` / visibilidade condicional de botões no frontend baseado na role do usuário), além de validar fluxos completos das personas (SECRETARIA vs PROFESSOR).
 ================================================================================
 FIM DO PASSO 1
 ================================================================================

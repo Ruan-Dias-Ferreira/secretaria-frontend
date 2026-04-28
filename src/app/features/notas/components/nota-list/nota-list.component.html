@@ -1,0 +1,46 @@
+<div class="container">
+  <div class="header">
+    <h1>Notas</h1>
+    <button class="btn-primary" (click)="abrirNovo()">+ Nova Nota</button>
+  </div>
+
+  <div *ngIf="loading" class="loading">Carregando...</div>
+
+  <table *ngIf="!loading && notas.length > 0">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Aluno ID</th>
+        <th>Disciplina ID</th>
+        <th>Bimestre</th>
+        <th>Valor</th>
+        <th>Situação</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let n of notas">
+        <td>{{ n.id }}</td>
+        <td>{{ n.alunoId }}</td>
+        <td>{{ n.disciplinaId }}</td>
+        <td>{{ n.bimestre }}º</td>
+        <td>{{ n.valor }}</td>
+        <td><span class="badge" [ngClass]="getSituacaoClass(n.situacaoNota)">{{ n.situacaoNota }}</span></td>
+        <td class="actions">
+          <button class="btn-secondary" (click)="abrirEdicao(n.id)">Editar</button>
+          <button class="btn-danger" (click)="excluir(n.id)">Excluir</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div *ngIf="!loading && notas.length === 0" class="empty">
+    Nenhuma nota cadastrada.
+  </div>
+</div>
+
+<app-nota-form
+  *ngIf="modalFormAberto"
+  [notaId]="notaSelecionadaId"
+  (close)="fecharModal()">
+</app-nota-form>

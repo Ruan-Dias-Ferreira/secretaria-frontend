@@ -1,5 +1,6 @@
 
 
+import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -9,7 +10,7 @@ import { AuthService } from '../../../../core/services/auth.service';
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './login.component.html'
 })
 export class LoginComponent implements OnInit, OnDestroy {

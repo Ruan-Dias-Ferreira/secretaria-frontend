@@ -1,0 +1,40 @@
+<div class="container">
+  <div class="header">
+    <h1>Usuários</h1>
+    <button class="btn-primary" (click)="abrirNovo()">+ Novo Usuário</button>
+  </div>
+
+  <div *ngIf="loading" class="loading">Carregando...</div>
+
+  <table *ngIf="!loading && usuarios.length > 0">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Login</th>
+        <th>Role</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let u of usuarios">
+        <td>{{ u.id }}</td>
+        <td>{{ u.login }}</td>
+        <td><span class="badge" [ngClass]="getRoleClass(u.role)">{{ u.role }}</span></td>
+        <td class="actions">
+          <button class="btn-secondary" (click)="abrirEdicao(u.id!)">Editar</button>
+          <button class="btn-danger" (click)="excluir(u.id!, u.login)">Excluir</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div *ngIf="!loading && usuarios.length === 0" class="empty">
+    Nenhum usuário cadastrado.
+  </div>
+</div>
+
+<app-usuario-form
+  *ngIf="modalFormAberto"
+  [usuarioId]="usuarioSelecionadoId"
+  (close)="fecharModal()">
+</app-usuario-form>

@@ -1,0 +1,40 @@
+<div class="container">
+  <div class="header">
+    <h1>Documentos</h1>
+    <button class="btn-primary" (click)="abrirNovo()">+ Emitir Documento</button>
+  </div>
+
+  <div *ngIf="loading" class="loading">Carregando...</div>
+
+  <table *ngIf="!loading && documentos.length > 0">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Aluno ID</th>
+        <th>Tipo</th>
+        <th>Data de Emissão</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let d of documentos">
+        <td>{{ d.id }}</td>
+        <td>{{ d.alunoId }}</td>
+        <td>{{ formatarTipo(d.tipo) }}</td>
+        <td>{{ d.dataEmissao }}</td>
+        <td class="actions">
+          <button class="btn-danger" (click)="excluir(d.id)">Excluir</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div *ngIf="!loading && documentos.length === 0" class="empty">
+    Nenhum documento emitido.
+  </div>
+</div>
+
+<app-documento-form
+  *ngIf="modalFormAberto"
+  (close)="fecharModal()">
+</app-documento-form>

@@ -1,0 +1,55 @@
+<div class="container">
+  <div class="header">
+    <h1>Matrículas</h1>
+    <button class="btn-primary" (click)="abrirNovo()">+ Nova Matrícula</button>
+  </div>
+
+  <div *ngIf="loading" class="loading">Carregando...</div>
+
+  <table *ngIf="!loading && matriculas.length > 0">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Aluno ID</th>
+        <th>Turma ID</th>
+        <th>Ano Letivo</th>
+        <th>Status</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let m of matriculas">
+        <td>{{ m.id }}</td>
+        <td>{{ m.alunoId }}</td>
+        <td>{{ m.turmaId }}</td>
+        <td>{{ m.anoLetivo }}</td>
+        <td><span class="badge" [ngClass]="getBadgeClass(m.status)">{{ m.status }}</span></td>
+        <td class="actions">
+          <button class="btn-secondary" (click)="abrirDetalhe(m.id)">Detalhes</button>
+          <button class="btn-secondary" (click)="abrirEdicao(m.id)">Editar</button>
+          <select (change)="alterarStatus(m.id, $any($event.target).value)">
+            <option value="" disabled selected>Status</option>
+            <option *ngFor="let s of statusOptions" [value]="s">{{ s }}</option>
+          </select>
+          <button class="btn-danger" (click)="excluir(m.id)">Excluir</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div *ngIf="!loading && matriculas.length === 0" class="empty">
+    Nenhuma matrícula cadastrada.
+  </div>
+</div>
+
+<app-matricula-form
+  *ngIf="modalAtivo === 'form'"
+  [matriculaId]="matriculaSelecionadaId"
+  (close)="fecharModal()">
+</app-matricula-form>
+
+<app-matricula-detail
+  *ngIf="modalAtivo === 'detail' && matriculaSelecionadaId !== null"
+  [matriculaId]="matriculaSelecionadaId"
+  (close)="fecharModal()">
+</app-matricula-detail>

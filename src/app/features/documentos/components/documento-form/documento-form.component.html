@@ -1,0 +1,40 @@
+<div class="overlay" (click)="cancelar()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Emitir Documento</h2>
+      <button class="close-btn" (click)="cancelar()">&times;</button>
+    </div>
+
+    <div class="info">A data de emissão será gerada automaticamente pelo servidor.</div>
+    <div *ngIf="errorMsg" class="alert">{{ errorMsg }}</div>
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" *ngIf="form">
+      <div class="form-grid">
+        <div>
+          <label>Aluno *</label>
+          <select formControlName="alunoId" [class.invalid]="campoInvalido('alunoId')">
+            <option [ngValue]="null" disabled>Selecione um aluno</option>
+            <option *ngFor="let a of alunos" [ngValue]="a.id">{{ a.nome }}</option>
+          </select>
+          <div class="error" *ngIf="campoInvalido('alunoId')">Selecione um aluno.</div>
+        </div>
+
+        <div>
+          <label>Tipo de Documento *</label>
+          <select formControlName="tipo" [class.invalid]="campoInvalido('tipo')">
+            <option [ngValue]="null" disabled>Selecione o tipo</option>
+            <option *ngFor="let t of tipoOptions" [value]="t">{{ tipoLabels[t] }}</option>
+          </select>
+          <div class="error" *ngIf="campoInvalido('tipo')">Selecione o tipo de documento.</div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button type="button" class="btn-secondary" (click)="cancelar()">Cancelar</button>
+        <button type="submit" class="btn-primary" [disabled]="loading">
+          {{ loading ? 'Emitindo...' : 'Emitir' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

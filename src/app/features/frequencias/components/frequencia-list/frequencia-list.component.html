@@ -1,0 +1,48 @@
+<div class="container">
+  <div class="header">
+    <h1>Frequências</h1>
+    <button class="btn-primary" (click)="abrirNovo()">+ Nova Frequência</button>
+  </div>
+
+  <div *ngIf="loading" class="loading">Carregando...</div>
+
+  <table *ngIf="!loading && frequencias.length > 0">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Aluno ID</th>
+        <th>Disciplina ID</th>
+        <th>Data</th>
+        <th>Presença</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let f of frequencias">
+        <td>{{ f.id }}</td>
+        <td>{{ f.alunoId }}</td>
+        <td>{{ f.disciplinaId }}</td>
+        <td>{{ f.data }}</td>
+        <td>
+          <span [ngClass]="f.presente ? 'presente' : 'ausente'">
+            {{ f.presente ? 'Presente' : 'Ausente' }}
+          </span>
+        </td>
+        <td class="actions">
+          <button class="btn-secondary" (click)="abrirEdicao(f.id)">Editar</button>
+          <button class="btn-danger" (click)="excluir(f.id)">Excluir</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div *ngIf="!loading && frequencias.length === 0" class="empty">
+    Nenhuma frequência registrada.
+  </div>
+</div>
+
+<app-frequencia-form
+  *ngIf="modalFormAberto"
+  [frequenciaId]="frequenciaSelecionadaId"
+  (close)="fecharModal()">
+</app-frequencia-form>

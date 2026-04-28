@@ -1,0 +1,41 @@
+<div class="overlay" (click)="cancelar()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>{{ isEdicao ? 'Editar Usuário' : 'Novo Usuário' }}</h2>
+      <button class="close-btn" (click)="cancelar()">&times;</button>
+    </div>
+
+    <div *ngIf="errorMsg" class="alert">{{ errorMsg }}</div>
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" *ngIf="form">
+      <div class="form-grid">
+        <div>
+          <label>Login *</label>
+          <input formControlName="login" [class.invalid]="campoInvalido('login')" />
+          <div class="error" *ngIf="campoInvalido('login')">Login é obrigatório (mín. 3 caracteres).</div>
+        </div>
+
+        <div>
+          <label>Senha *</label>
+          <input type="password" formControlName="senha" [class.invalid]="campoInvalido('senha')" />
+          <div class="error" *ngIf="campoInvalido('senha')">Senha é obrigatória (mín. 6 caracteres).</div>
+        </div>
+
+        <div>
+          <label>Role *</label>
+          <select formControlName="role" [class.invalid]="campoInvalido('role')">
+            <option *ngFor="let r of roleOptions" [value]="r">{{ r }}</option>
+          </select>
+          <div class="error" *ngIf="campoInvalido('role')">Selecione uma role.</div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button type="button" class="btn-secondary" (click)="cancelar()">Cancelar</button>
+        <button type="submit" class="btn-primary" [disabled]="loading">
+          {{ loading ? 'Salvando...' : (isEdicao ? 'Atualizar' : 'Salvar') }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
