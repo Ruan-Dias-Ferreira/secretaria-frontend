@@ -1,80 +1,73 @@
+import { Component, Inject, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
 import { Subject, takeUntil } from 'rxjs';
+import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule } from '@angular/material/dialog';
+import { MatButtonModule } from '@angular/material/button';
+import { MatTableModule } from '@angular/material/table';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { FrequenciaResumoResponse } from '../../../../core/models/responses/frequencia-resumo.response';
 import { SituacaoFrequencia } from '../../../../core/models/enums/situacao-frequencia.enum';
 import { AlunoService } from '../../services/aluno.service';
 
+export interface FrequenciaDialogData { alunoId: number; }
+
 @Component({
   selector: 'app-frequencia-modal',
   standalone: true,
-  imports: [CommonModule],
+  imports: [
+    CommonModule,
+    MatDialogModule,
+    MatButtonModule,
+    MatTableModule,
+    MatProgressSpinnerModule
+  ],
   templateUrl: './frequencia-modal.component.html',
   styles: [`
-    .overlay {
-      position: fixed; inset: 0; background: rgba(0,0,0,.5);
-      display: flex; align-items: center; justify-content: center; z-index: 1000;
+    mat-dialog-content { min-width: 560px; max-height: 70vh; }
+    .loading, .empty {
+      display: flex; justify-content: center;
+      padding: 24px; color: var(--mat-sys-on-surface-variant);
     }
-    .modal {
-      background: #fff; border-radius: 8px; padding: 24px;
-      width: 90%; max-width: 700px; max-height: 90vh; overflow-y: auto;
-    }
-    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-    .modal-header h2 { margin: 0; }
-    .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { padding: 10px; border-bottom: 1px solid #e5e7eb; text-align: left; font-size: 14px; }
-    th { background: #f9fafb; font-weight: 600; }
-    .badge { padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
-    .badge-regular { background: #d1fae5; color: #065f46; }
+    table { width: 100%; }
+    .badge { padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+    .badge-regular   { background: #d1fae5; color: #065f46; }
     .badge-reprovado { background: #fee2e2; color: #991b1b; }
-    .loading, .empty { text-align: center; padding: 24px; color: #6b7280; }
-    .actions { display: flex; justify-content: flex-end; margin-top: 20px; }
-    button { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; background: #e5e7eb; }
   `]
 })
 export class FrequenciaModalComponent implements OnInit, OnDestroy {
-
-  @Input() alunoId!: number;
-  @Output() close = new EventEmitter<void>();
 
   frequencias: FrequenciaResumoResponse[] = [];
   loading = false;
   errorMsg = '';
 
+  readonly displayedColumns = ['disciplina', 'cargaHoraria', 'presencas', 'percentual', 'situacao'];
+
   private destroy$ = new Subject<void>();
 
-  constructor(private alunoService: AlunoService) {}
+  constructor(
+    private alunoService: AlunoService,
+    private dialogRef: MatDialogRef<FrequenciaModalComponent>,
+    @Inject(MAT_DIALOG_DATA) public data: FrequenciaDialogData
+  ) {}
 
   ngOnInit(): void {
     this.loading = true;
-    this.alunoService.getFrequencias(this.alunoId)
+    this.alunoService.getFrequencias(this.data.alunoId)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (data) => {
-          this.frequencias = data;
-          this.loading = false;
-        },
-        error: () => {
-          this.errorMsg = 'Erro ao carregar frequências.';
-          this.loading = false;
-        }
+        next: d => { this.frequencias = d; this.loading = false; },
+        error: () => { this.errorMsg = 'Erro ao carregar frequências.'; this.loading = false; }
       });
   }
 
-  badgeClass(situacao: SituacaoFrequencia): string {
-    return situacao === SituacaoFrequencia.REGULAR
+  badgeClass(s: SituacaoFrequencia): string {
+    return s === SituacaoFrequencia.REGULAR
       ? 'badge badge-regular'
       : 'badge badge-reprovado';
   }
 
-  fechar(): void {
-    this.close.emit();
-  }
+  fechar(): void { this.dialogRef.close(); }
 
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
-  }
+  ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
 }

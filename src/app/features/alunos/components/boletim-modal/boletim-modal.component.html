@@ -1,44 +1,59 @@
-<div class="overlay" (click)="fechar()">
-  <div class="modal" (click)="$event.stopPropagation()">
-    <div class="modal-header">
-      <h2>Boletim — Aluno #{{ alunoId }}</h2>
-      <button class="close-btn" (click)="fechar()">&times;</button>
-    </div>
-
-    <div *ngIf="loading" class="loading">Carregando boletim...</div>
-
-    <div *ngIf="errorMsg" class="empty">{{ errorMsg }}</div>
-
-    <div *ngIf="!loading && boletim.length === 0 && !errorMsg" class="empty">
-      Aluno sem notas cadastradas.
-    </div>
-
-    <table *ngIf="!loading && boletim.length > 0">
-      <thead>
-        <tr>
-          <th>Disciplina</th>
-          <th>1º Bim</th>
-          <th>2º Bim</th>
-          <th>3º Bim</th>
-          <th>4º Bim</th>
-          <th>Média</th>
-          <th>Situação</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let item of boletim">
-          <td>{{ item.nomeDisciplina }}</td>
-          <td *ngFor="let bim of [1,2,3,4]">
-            {{ notaPorBimestre(item, bim) ?? '—' }}
-          </td>
-          <td><strong>{{ item.mediaNotaDisciplina | number:'1.2-2' }}</strong></td>
-          <td><span [class]="badgeClass(item.situacaoNota)">{{ item.situacaoNota }}</span></td>
-        </tr>
-      </tbody>
-    </table>
-
-    <div class="actions">
-      <button (click)="fechar()">Fechar</button>
-    </div>
+<h2 mat-dialog-title>Boletim — Aluno #{{ data.alunoId }}</h2>
+<mat-dialog-content>
+  <div *ngIf="loading" class="loading">
+    <mat-spinner diameter="40"></mat-spinner>
   </div>
-</div>
+
+  <div *ngIf="errorMsg" class="empty">{{ errorMsg }}</div>
+
+  <div *ngIf="!loading && boletim.length === 0 && !errorMsg" class="empty">
+    Aluno sem notas cadastradas.
+  </div>
+
+  <table mat-table [dataSource]="boletim" *ngIf="!loading && boletim.length > 0">
+    <ng-container matColumnDef="disciplina">
+      <th mat-header-cell *matHeaderCellDef>Disciplina</th>
+      <td mat-cell *matCellDef="let i">{{ i.nomeDisciplina }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="b1">
+      <th mat-header-cell *matHeaderCellDef>1º Bim</th>
+      <td mat-cell *matCellDef="let i">{{ notaPorBimestre(i, 1) ?? '—' }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="b2">
+      <th mat-header-cell *matHeaderCellDef>2º Bim</th>
+      <td mat-cell *matCellDef="let i">{{ notaPorBimestre(i, 2) ?? '—' }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="b3">
+      <th mat-header-cell *matHeaderCellDef>3º Bim</th>
+      <td mat-cell *matCellDef="let i">{{ notaPorBimestre(i, 3) ?? '—' }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="b4">
+      <th mat-header-cell *matHeaderCellDef>4º Bim</th>
+      <td mat-cell *matCellDef="let i">{{ notaPorBimestre(i, 4) ?? '—' }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="media">
+      <th mat-header-cell *matHeaderCellDef>Média</th>
+      <td mat-cell *matCellDef="let i">
+        <strong>{{ i.mediaNotaDisciplina | number:'1.2-2' }}</strong>
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="situacao">
+      <th mat-header-cell *matHeaderCellDef>Situação</th>
+      <td mat-cell *matCellDef="let i">
+        <span [class]="badgeClass(i.situacaoNota)">{{ i.situacaoNota }}</span>
+      </td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+    <tr mat-row *matRowDef="let r; columns: displayedColumns"></tr>
+  </table>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button (click)="fechar()">Fechar</button>
+</mat-dialog-actions>

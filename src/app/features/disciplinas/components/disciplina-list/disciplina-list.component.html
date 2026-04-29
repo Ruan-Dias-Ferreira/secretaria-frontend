@@ -1,43 +1,81 @@
-<div class="container">
-  <div class="header">
+<div class="page-container">
+  <div class="page-header">
     <h1>Disciplinas</h1>
-    <button class="btn-primary" (click)="abrirNovo()">+ Nova Disciplina</button>
+    <button *ngIf="isSecretaria" mat-flat-button color="primary" (click)="abrirNovo()">
+      <mat-icon>add</mat-icon>
+      Nova Disciplina
+    </button>
   </div>
 
-  <div *ngIf="loading" class="loading">Carregando...</div>
+  <div *ngIf="loading" class="loading-overlay">
+    <mat-spinner diameter="48"></mat-spinner>
+  </div>
 
-  <table *ngIf="!loading && disciplinas.length > 0">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Nome</th>
-        <th>Carga Horária</th>
-        <th>Turma</th>
-        <th>Professor</th>
-        <th>Ações</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let disciplina of disciplinas">
-        <td>{{ disciplina.id }}</td>
-        <td>{{ disciplina.nome }}</td>
-        <td>{{ disciplina.cargaHoraria }}h</td>
-        <td>#{{ disciplina.turmaId }}</td>
-        <td>
-          <span *ngIf="disciplina.professorLogin">{{ disciplina.professorLogin }}</span>
-          <span *ngIf="!disciplina.professorLogin" class="muted">Sem professor</span>
-        </td>
-        <td class="actions">
-          <button class="btn-secondary" (click)="abrirDetalhe(disciplina.id)">Detalhes</button>
-          <button class="btn-secondary" (click)="abrirEdicao(disciplina.id)">Editar</button>
-          <button class="btn-danger" (click)="excluir(disciplina.id, disciplina.nome)">Excluir</button>
-        </td>
-      </tr>
-    </tbody>
+  <table mat-table [dataSource]="disciplinas" *ngIf="!loading && disciplinas.length > 0">
+    <ng-container matColumnDef="id">
+      <th mat-header-cell *matHeaderCellDef>ID</th>
+      <td mat-cell *matCellDef="let d">{{ d.id }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="nome">
+      <th mat-header-cell *matHeaderCellDef>Nome</th>
+      <td mat-cell *matCellDef="let d">{{ d.nome }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="cargaHoraria">
+      <th mat-header-cell *matHeaderCellDef>Carga Horária</th>
+      <td mat-cell *matCellDef="let d">{{ d.cargaHoraria }}h</td>
+    </ng-container>
+
+    <ng-container matColumnDef="turma">
+      <th mat-header-cell *matHeaderCellDef>Turma</th>
+      <td mat-cell *matCellDef="let d">#{{ d.turmaId }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="professor">
+      <th mat-header-cell *matHeaderCellDef>Professor</th>
+      <td mat-cell *matCellDef="let d">
+        <span *ngIf="d.professorLogin">{{ d.professorLogin }}</span>
+        <span *ngIf="!d.professorLogin" class="muted">Sem professor</span>
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="acoes">
+      <th mat-header-cell *matHeaderCellDef style="text-align:right;">Ações</th>
+      <td mat-cell *matCellDef="let d">
+        <div class="actions-cell">
+          <button mat-icon-button matTooltip="Detalhes" (click)="abrirDetalhe(d.id)">
+            <mat-icon>info</mat-icon>
+          </button>
+          <button
+            *ngIf="isSecretaria"
+            mat-icon-button
+            color="primary"
+            matTooltip="Editar"
+            (click)="abrirEdicao(d.id)"
+          >
+            <mat-icon>edit</mat-icon>
+          </button>
+          <button
+            *ngIf="isSecretaria"
+            mat-icon-button
+            color="warn"
+            matTooltip="Excluir"
+            (click)="excluir(d.id, d.nome)"
+          >
+            <mat-icon>delete</mat-icon>
+          </button>
+        </div>
+      </td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+    <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
   </table>
 
-  <div *ngIf="!loading && disciplinas.length === 0" class="empty">
-    Nenhuma disciplina cadastrada.
+  <div *ngIf="!loading && disciplinas.length === 0" class="empty-state">
+    <mat-icon style="font-size:48px;width:48px;height:48px;">menu_book</mat-icon>
+    <p>Nenhuma disciplina cadastrada.</p>
   </div>
 </div>
 
@@ -46,9 +84,3 @@
   [disciplinaId]="disciplinaSelecionadaId"
   (close)="fecharModal()">
 </app-disciplina-form>
-
-<app-disciplina-detail
-  *ngIf="modalAtivo === 'detail' && disciplinaSelecionadaId !== null"
-  [disciplinaId]="disciplinaSelecionadaId"
-  (close)="fecharModal()">
-</app-disciplina-detail>

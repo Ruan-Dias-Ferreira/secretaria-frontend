@@ -3,54 +3,72 @@ import { Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angu
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Subject, takeUntil } from 'rxjs';
 
+import { MatDialogModule } from '@angular/material/dialog';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+
 import { AlunoRequest } from '../../../../core/models/requests/aluno.request';
 import { AlunoService } from '../../services/aluno.service';
+import { NotificationService } from '../../../../core/services/notification.service';
 
 @Component({
   selector: 'app-aluno-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    MatDialogModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatButtonModule,
+    MatIconModule,
+    MatProgressSpinnerModule
+  ],
   templateUrl: './aluno-form.component.html',
   styles: [`
     .overlay {
       position: fixed; inset: 0; background: rgba(0,0,0,.5);
       display: flex; align-items: center; justify-content: center; z-index: 1000;
+      padding: 16px;
     }
     .modal {
-      background: #fff; border-radius: 8px; padding: 24px;
-      width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto;
+      background: var(--mat-sys-surface);
+      color: var(--mat-sys-on-surface);
+      border-radius: 12px;
+      padding: 24px;
+      width: 100%; max-width: 720px; max-height: 90vh; overflow-y: auto;
+      box-shadow: var(--mat-sys-level3);
     }
-    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-    .modal-header h2 { margin: 0; }
-    .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; }
-    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .form-grid .full { grid-column: 1 / -1; }
-    label { display: block; font-size: 13px; margin-bottom: 4px; color: #374151; }
-    input { width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px; box-sizing: border-box; }
-    input.invalid { border-color: #dc2626; }
-    .error { color: #dc2626; font-size: 12px; margin-top: 2px; }
+    .modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .modal-header h2 { margin: 0; font-size: 22px; font-weight: 500; }
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+    }
+    .full { grid-column: 1 / -1; }
     .actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
-    button { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; }
-    .btn-primary { background: #2563eb; color: #fff; }
-    .btn-primary:disabled { background: #93c5fd; cursor: not-allowed; }
-    .btn-secondary { background: #e5e7eb; color: #111827; }
-    .alert { padding: 8px 12px; background: #fee2e2; color: #991b1b; border-radius: 4px; margin-bottom: 12px; }
   `]
 })
 export class AlunoFormComponent implements OnInit, OnDestroy {
-
   @Input() alunoId: number | null = null;
   @Output() close = new EventEmitter<void>();
 
   form!: FormGroup;
   loading = false;
-  errorMsg = '';
 
   private destroy$ = new Subject<void>();
 
   constructor(
     private fb: FormBuilder,
-    private alunoService: AlunoService
+    private alunoService: AlunoService,
+    private notification: NotificationService
   ) {}
 
   ngOnInit(): void {
@@ -66,67 +84,41 @@ export class AlunoFormComponent implements OnInit, OnDestroy {
       nomePai: ['']
     });
 
-    if (this.alunoId !== null) {
-      this.carregarAluno(this.alunoId);
-    }
+    if (this.alunoId !== null) this.carregarAluno(this.alunoId);
   }
 
-  get isEdicao(): boolean {
-    return this.alunoId !== null;
-  }
+  get isEdicao(): boolean { return this.alunoId !== null; }
 
   private carregarAluno(id: number): void {
     this.loading = true;
     this.alunoService.findById(id)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (aluno) => {
-          this.form.patchValue(aluno);
-          this.loading = false;
-        },
-        error: () => {
-          this.errorMsg = 'Erro ao carregar dados do aluno.';
-          this.loading = false;
-        }
+        next: (aluno) => { this.form.patchValue(aluno); this.loading = false; },
+        error: () => { this.loading = false; }
       });
   }
 
   onSubmit(): void {
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      return;
-    }
+    if (this.form.invalid) { this.form.markAllAsTouched(); return; }
 
     this.loading = true;
-    this.errorMsg = '';
     const request = this.form.value as AlunoRequest;
-
     const operacao$ = this.isEdicao && this.alunoId !== null
       ? this.alunoService.update(this.alunoId, request)
       : this.alunoService.save(request);
 
-    operacao$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: () => {
-          this.loading = false;
-          this.close.emit();
-        },
-        error: () => {
-          this.errorMsg = 'Erro ao salvar. Verifique os dados.';
-          this.loading = false;
-        }
-      });
+    operacao$.pipe(takeUntil(this.destroy$)).subscribe({
+      next: () => {
+        this.loading = false;
+        this.notification.success(this.isEdicao ? 'Aluno atualizado.' : 'Aluno cadastrado.');
+        this.close.emit();
+      },
+      error: () => { this.loading = false; }
+    });
   }
 
-  cancelar(): void {
-    this.close.emit();
-  }
-
-  campoInvalido(nome: string): boolean {
-    const c = this.form.get(nome);
-    return !!(c && c.invalid && c.touched);
-  }
+  cancelar(): void { this.close.emit(); }
 
   ngOnDestroy(): void {
     this.destroy$.next();

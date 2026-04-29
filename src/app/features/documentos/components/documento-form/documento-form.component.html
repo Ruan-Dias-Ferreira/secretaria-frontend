@@ -1,38 +1,40 @@
 <div class="overlay" (click)="cancelar()">
-  <div class="modal" (click)="$event.stopPropagation()">
-    <div class="modal-header">
+  <div class="dialog-card" (click)="$event.stopPropagation()">
+    <div class="dialog-title">
       <h2>Emitir Documento</h2>
-      <button class="close-btn" (click)="cancelar()">&times;</button>
+      <button mat-icon-button (click)="cancelar()" aria-label="Fechar">
+        <mat-icon>close</mat-icon>
+      </button>
     </div>
 
-    <div class="info">A data de emissão será gerada automaticamente pelo servidor.</div>
-    <div *ngIf="errorMsg" class="alert">{{ errorMsg }}</div>
+    <p class="info-hint">A data de emissão será gerada automaticamente pelo servidor.</p>
 
-    <form [formGroup]="form" (ngSubmit)="onSubmit()" *ngIf="form">
-      <div class="form-grid">
-        <div>
-          <label>Aluno *</label>
-          <select formControlName="alunoId" [class.invalid]="campoInvalido('alunoId')">
-            <option [ngValue]="null" disabled>Selecione um aluno</option>
-            <option *ngFor="let a of alunos" [ngValue]="a.id">{{ a.nome }}</option>
-          </select>
-          <div class="error" *ngIf="campoInvalido('alunoId')">Selecione um aluno.</div>
-        </div>
+    <div *ngIf="loading" class="spinner-center">
+      <mat-spinner diameter="40"></mat-spinner>
+    </div>
 
-        <div>
-          <label>Tipo de Documento *</label>
-          <select formControlName="tipo" [class.invalid]="campoInvalido('tipo')">
-            <option [ngValue]="null" disabled>Selecione o tipo</option>
-            <option *ngFor="let t of tipoOptions" [value]="t">{{ tipoLabels[t] }}</option>
-          </select>
-          <div class="error" *ngIf="campoInvalido('tipo')">Selecione o tipo de documento.</div>
-        </div>
-      </div>
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" *ngIf="!loading">
+      <mat-form-field appearance="outline" style="width:100%">
+        <mat-label>Aluno</mat-label>
+        <mat-select formControlName="alunoId">
+          <mat-option *ngFor="let a of alunos" [value]="a.id">{{ a.nome }}</mat-option>
+        </mat-select>
+        <mat-error *ngIf="form.get('alunoId')?.hasError('required')">Selecione um aluno.</mat-error>
+      </mat-form-field>
 
-      <div class="actions">
-        <button type="button" class="btn-secondary" (click)="cancelar()">Cancelar</button>
-        <button type="submit" class="btn-primary" [disabled]="loading">
-          {{ loading ? 'Emitindo...' : 'Emitir' }}
+      <mat-form-field appearance="outline" style="width:100%; margin-top:8px;">
+        <mat-label>Tipo de Documento</mat-label>
+        <mat-select formControlName="tipo">
+          <mat-option *ngFor="let t of tipoOptions" [value]="t">{{ tipoLabels[t] }}</mat-option>
+        </mat-select>
+        <mat-error *ngIf="form.get('tipo')?.hasError('required')">Selecione o tipo de documento.</mat-error>
+      </mat-form-field>
+
+      <div class="dialog-actions">
+        <button type="button" mat-button (click)="cancelar()">Cancelar</button>
+        <button type="submit" mat-flat-button color="primary" [disabled]="loading">
+          <mat-icon>description</mat-icon>
+          Emitir
         </button>
       </div>
     </form>

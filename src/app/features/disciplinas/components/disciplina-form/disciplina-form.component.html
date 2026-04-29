@@ -2,51 +2,54 @@
   <div class="modal" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <h2>{{ isEdicao ? 'Editar Disciplina' : 'Nova Disciplina' }}</h2>
-      <button class="close-btn" (click)="cancelar()">&times;</button>
+      <button mat-icon-button (click)="cancelar()" aria-label="Fechar">
+        <mat-icon>close</mat-icon>
+      </button>
     </div>
-
-    <div *ngIf="errorMsg" class="alert">{{ errorMsg }}</div>
 
     <form [formGroup]="form" (ngSubmit)="onSubmit()" *ngIf="form">
       <div class="form-grid">
-        <div class="full">
-          <label>Nome *</label>
-          <input formControlName="nome" [class.invalid]="campoInvalido('nome')" />
-          <div class="error" *ngIf="campoInvalido('nome')">Nome é obrigatório (mín. 2 caracteres).</div>
-        </div>
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>Nome</mat-label>
+          <input matInput formControlName="nome" />
+          <mat-error *ngIf="form.get('nome')?.hasError('required')">Nome é obrigatório.</mat-error>
+          <mat-error *ngIf="form.get('nome')?.hasError('minlength')">Mínimo 2 caracteres.</mat-error>
+        </mat-form-field>
 
-        <div>
-          <label>Carga Horária (h) *</label>
-          <input type="number" formControlName="cargaHoraria" [class.invalid]="campoInvalido('cargaHoraria')" />
-          <div class="error" *ngIf="campoInvalido('cargaHoraria')">Informe carga horária válida.</div>
-        </div>
+        <mat-form-field appearance="outline">
+          <mat-label>Carga Horária (h)</mat-label>
+          <input matInput type="number" formControlName="cargaHoraria" />
+          <mat-error *ngIf="form.get('cargaHoraria')?.invalid">Informe carga horária válida.</mat-error>
+        </mat-form-field>
 
-        <div>
-          <label>Turma *</label>
-          <select formControlName="turmaId" [class.invalid]="campoInvalido('turmaId')">
-            <option [ngValue]="null" disabled>Selecione...</option>
-            <option *ngFor="let t of turmas" [ngValue]="t.id">
+        <mat-form-field appearance="outline">
+          <mat-label>Turma</mat-label>
+          <mat-select formControlName="turmaId">
+            <mat-option *ngFor="let t of turmas" [value]="t.id">
               {{ t.nome }} ({{ t.anoLetivo }} - {{ t.turno }})
-            </option>
-          </select>
-          <div class="error" *ngIf="campoInvalido('turmaId')">Selecione uma turma.</div>
-        </div>
+            </mat-option>
+          </mat-select>
+          <mat-error *ngIf="form.get('turmaId')?.hasError('required')">Selecione uma turma.</mat-error>
+        </mat-form-field>
 
-        <div class="full">
-          <label>Professor (opcional)</label>
-          <select formControlName="professorId">
-            <option [ngValue]="null">Sem professor</option>
-            <option *ngFor="let p of professores" [ngValue]="p.id">
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>Professor (opcional)</mat-label>
+          <mat-select formControlName="professorId">
+            <mat-option [value]="null">Sem professor</mat-option>
+            <mat-option *ngFor="let p of professores" [value]="p.id">
               {{ p.login }}
-            </option>
-          </select>
-        </div>
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
       </div>
 
       <div class="actions">
-        <button type="button" class="btn-secondary" (click)="cancelar()">Cancelar</button>
-        <button type="submit" class="btn-primary" [disabled]="loading">
-          {{ loading ? 'Salvando...' : (isEdicao ? 'Atualizar' : 'Salvar') }}
+        <button type="button" mat-button (click)="cancelar()">Cancelar</button>
+        <button type="submit" mat-flat-button color="primary" [disabled]="loading">
+          <span *ngIf="!loading">{{ isEdicao ? 'Atualizar' : 'Salvar' }}</span>
+          <span *ngIf="loading" class="loading-inline">
+            <mat-spinner diameter="18"></mat-spinner> Salvando...
+          </span>
         </button>
       </div>
     </form>

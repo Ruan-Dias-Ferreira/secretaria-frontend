@@ -1,39 +1,36 @@
+import { Component, Inject, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
 import { Subject, takeUntil } from 'rxjs';
+import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule } from '@angular/material/dialog';
+import { MatButtonModule } from '@angular/material/button';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { TurmaResponse } from '../../../../core/models/responses/turma.response';
 import { TurmaService } from '../../services/turma.service';
 
+export interface TurmaDetailData { turmaId: number; }
+
 @Component({
   selector: 'app-turma-detail',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, MatDialogModule, MatButtonModule, MatProgressSpinnerModule],
   templateUrl: './turma-detail.component.html',
   styles: [`
-    .overlay {
-      position: fixed; inset: 0; background: rgba(0,0,0,.5);
-      display: flex; align-items: center; justify-content: center; z-index: 1000;
-    }
-    .modal {
-      background: #fff; border-radius: 8px; padding: 24px;
-      width: 90%; max-width: 500px;
-    }
-    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-    .modal-header h2 { margin: 0; }
-    .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; }
+    mat-dialog-content { min-width: 360px; }
+    .loading { display: flex; justify-content: center; padding: 24px; }
     dl { margin: 0; }
-    dt { font-size: 12px; color: #6b7280; text-transform: uppercase; margin-top: 12px; }
-    dd { margin: 4px 0 0 0; font-size: 15px; color: #111827; }
-    .loading, .empty { text-align: center; padding: 24px; color: #6b7280; }
-    .actions { display: flex; justify-content: flex-end; margin-top: 20px; }
-    button { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; background: #e5e7eb; }
+    dt {
+      font-size: 12px;
+      color: var(--mat-sys-on-surface-variant);
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      margin-top: 12px;
+    }
+    dd { margin: 4px 0 0 0; font-size: 15px; color: var(--mat-sys-on-surface); }
+    .error { color: var(--mat-sys-error); padding: 16px 0; text-align: center; }
   `]
 })
 export class TurmaDetailComponent implements OnInit, OnDestroy {
-
-  @Input() turmaId!: number;
-  @Output() close = new EventEmitter<void>();
 
   turma: TurmaResponse | null = null;
   loading = false;
@@ -41,27 +38,23 @@ export class TurmaDetailComponent implements OnInit, OnDestroy {
 
   private destroy$ = new Subject<void>();
 
-  constructor(private turmaService: TurmaService) {}
+  constructor(
+    private turmaService: TurmaService,
+    private dialogRef: MatDialogRef<TurmaDetailComponent>,
+    @Inject(MAT_DIALOG_DATA) public data: TurmaDetailData
+  ) {}
 
   ngOnInit(): void {
     this.loading = true;
-    this.turmaService.findById(this.turmaId)
+    this.turmaService.findById(this.data.turmaId)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (data) => { this.turma = data; this.loading = false; },
-        error: () => {
-          this.errorMsg = 'Erro ao carregar turma.';
-          this.loading = false;
-        }
+        next: t => { this.turma = t; this.loading = false; },
+        error: () => { this.errorMsg = 'Erro ao carregar turma.'; this.loading = false; }
       });
   }
 
-  fechar(): void {
-    this.close.emit();
-  }
+  fechar(): void { this.dialogRef.close(); }
 
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
-  }
+  ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
 }

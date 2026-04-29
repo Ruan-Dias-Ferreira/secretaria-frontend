@@ -5,11 +5,13 @@ import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
 import { AuthService } from '../services/auth.service';
+import { NotificationService } from '../services/notification.service';
 import { ErrorResponse } from '../models/responses/error.response';
 
 export const errorInterceptor: HttpInterceptorFn = (req, next) => {
-  const authService = inject(AuthService);
-  const router      = inject(Router);
+  const authService  = inject(AuthService);
+  const router       = inject(Router);
+  const notification = inject(NotificationService);
 
   return next(req).pipe(
     catchError((httpError: HttpErrorResponse) => {
@@ -19,42 +21,39 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
         case 401:
           authService.logout();
           router.navigate(['/auth/login']);
+          notification.warning('Sessão expirada. Faça login novamente.');
           break;
 
         case 403:
-          showError(body?.message ?? 'Acesso negado.');
+          notification.error(body?.message ?? 'Acesso negado.');
           break;
 
         case 404:
-          showError(body?.message ?? 'Recurso não encontrado.');
+          notification.error(body?.message ?? 'Recurso não encontrado.');
           break;
 
         case 400:
         case 409:
           if (body?.errors?.length > 0) {
-            showError(body.errors.join(' | '));
+            notification.error(body.errors.join(' | '));
           } else {
-            showError(body?.message ?? 'Requisição inválida.');
+            notification.error(body?.message ?? 'Requisição inválida.');
           }
           break;
 
         case 500:
-          showError('Erro interno — contate o suporte.');
+          notification.error('Erro interno — contate o suporte.');
           break;
 
         case 0:
-          showError('Sem conexão com o servidor.');
+          notification.error('Sem conexão com o servidor.');
           break;
 
         default:
-          showError('Ocorreu um erro inesperado.');
+          notification.error('Ocorreu um erro inesperado.');
       }
 
       return throwError(() => httpError);
     })
   );
 };
-
-function showError(message: string): void {
-  alert(message); 
-}

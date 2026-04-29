@@ -1,39 +1,49 @@
 <div class="overlay" (click)="cancelar()">
-  <div class="modal" (click)="$event.stopPropagation()">
-    <div class="modal-header">
+  <div class="dialog-card" (click)="$event.stopPropagation()">
+    <div class="dialog-title">
       <h2>{{ isEdicao ? 'Editar Usuário' : 'Novo Usuário' }}</h2>
-      <button class="close-btn" (click)="cancelar()">&times;</button>
+      <button mat-icon-button (click)="cancelar()" aria-label="Fechar">
+        <mat-icon>close</mat-icon>
+      </button>
     </div>
 
-    <div *ngIf="errorMsg" class="alert">{{ errorMsg }}</div>
+    <div *ngIf="loading" class="spinner-center">
+      <mat-spinner diameter="40"></mat-spinner>
+    </div>
 
-    <form [formGroup]="form" (ngSubmit)="onSubmit()" *ngIf="form">
-      <div class="form-grid">
-        <div>
-          <label>Login *</label>
-          <input formControlName="login" [class.invalid]="campoInvalido('login')" />
-          <div class="error" *ngIf="campoInvalido('login')">Login é obrigatório (mín. 3 caracteres).</div>
-        </div>
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" *ngIf="!loading">
+      <mat-form-field appearance="outline" style="width:100%">
+        <mat-label>Login</mat-label>
+        <input matInput formControlName="login" autocomplete="username" />
+        <mat-error *ngIf="form.get('login')?.hasError('required')">Login é obrigatório.</mat-error>
+        <mat-error *ngIf="form.get('login')?.hasError('minlength')">Mínimo 3 caracteres.</mat-error>
+      </mat-form-field>
 
-        <div>
-          <label>Senha *</label>
-          <input type="password" formControlName="senha" [class.invalid]="campoInvalido('senha')" />
-          <div class="error" *ngIf="campoInvalido('senha')">Senha é obrigatória (mín. 6 caracteres).</div>
-        </div>
+      <mat-form-field appearance="outline" style="width:100%; margin-top:8px;">
+        <mat-label>Senha</mat-label>
+        <input matInput [type]="senhaVisivel ? 'text' : 'password'"
+               formControlName="senha" autocomplete="new-password" />
+        <button mat-icon-button matSuffix type="button"
+                (click)="senhaVisivel = !senhaVisivel"
+                [attr.aria-label]="senhaVisivel ? 'Ocultar senha' : 'Mostrar senha'">
+          <mat-icon>{{ senhaVisivel ? 'visibility_off' : 'visibility' }}</mat-icon>
+        </button>
+        <mat-error *ngIf="form.get('senha')?.hasError('required')">Senha é obrigatória.</mat-error>
+        <mat-error *ngIf="form.get('senha')?.hasError('minlength')">Mínimo 6 caracteres.</mat-error>
+      </mat-form-field>
 
-        <div>
-          <label>Role *</label>
-          <select formControlName="role" [class.invalid]="campoInvalido('role')">
-            <option *ngFor="let r of roleOptions" [value]="r">{{ r }}</option>
-          </select>
-          <div class="error" *ngIf="campoInvalido('role')">Selecione uma role.</div>
-        </div>
-      </div>
+      <mat-form-field appearance="outline" style="width:100%; margin-top:8px;">
+        <mat-label>Role</mat-label>
+        <mat-select formControlName="role">
+          <mat-option *ngFor="let r of roleOptions" [value]="r">{{ r }}</mat-option>
+        </mat-select>
+        <mat-error *ngIf="form.get('role')?.hasError('required')">Selecione uma role.</mat-error>
+      </mat-form-field>
 
-      <div class="actions">
-        <button type="button" class="btn-secondary" (click)="cancelar()">Cancelar</button>
-        <button type="submit" class="btn-primary" [disabled]="loading">
-          {{ loading ? 'Salvando...' : (isEdicao ? 'Atualizar' : 'Salvar') }}
+      <div class="dialog-actions">
+        <button type="button" mat-button (click)="cancelar()">Cancelar</button>
+        <button type="submit" mat-flat-button color="primary" [disabled]="loading">
+          {{ isEdicao ? 'Atualizar' : 'Salvar' }}
         </button>
       </div>
     </form>

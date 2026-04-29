@@ -1,40 +1,78 @@
-<div class="container">
-  <div class="header">
+<div class="page-container">
+  <div class="page-header">
     <h1>Turmas</h1>
-    <button class="btn-primary" (click)="abrirNovo()">+ Nova Turma</button>
+    <button *ngIf="isSecretaria" mat-flat-button color="primary" (click)="abrirNovo()">
+      <mat-icon>add</mat-icon>
+      Nova Turma
+    </button>
   </div>
 
-  <div *ngIf="loading" class="loading">Carregando...</div>
+  <div *ngIf="loading" class="loading-overlay">
+    <mat-spinner diameter="48"></mat-spinner>
+  </div>
 
-  <table *ngIf="!loading && turmas.length > 0">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Nome</th>
-        <th>Ano Letivo</th>
-        <th>Turno</th>
-        <th>Curso</th>
-        <th>Ações</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let turma of turmas">
-        <td>{{ turma.id }}</td>
-        <td>{{ turma.nome }}</td>
-        <td>{{ turma.anoLetivo }}</td>
-        <td>{{ turma.turno }}</td>
-        <td>{{ turma.curso }}</td>
-        <td class="actions">
-          <button class="btn-secondary" (click)="abrirDetalhe(turma.id)">Detalhes</button>
-          <button class="btn-secondary" (click)="abrirEdicao(turma.id)">Editar</button>
-          <button class="btn-danger" (click)="excluir(turma.id, turma.nome)">Excluir</button>
-        </td>
-      </tr>
-    </tbody>
+  <table mat-table [dataSource]="turmas" *ngIf="!loading && turmas.length > 0">
+    <ng-container matColumnDef="id">
+      <th mat-header-cell *matHeaderCellDef>ID</th>
+      <td mat-cell *matCellDef="let t">{{ t.id }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="nome">
+      <th mat-header-cell *matHeaderCellDef>Nome</th>
+      <td mat-cell *matCellDef="let t">{{ t.nome }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="anoLetivo">
+      <th mat-header-cell *matHeaderCellDef>Ano Letivo</th>
+      <td mat-cell *matCellDef="let t">{{ t.anoLetivo }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="turno">
+      <th mat-header-cell *matHeaderCellDef>Turno</th>
+      <td mat-cell *matCellDef="let t">{{ t.turno }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="curso">
+      <th mat-header-cell *matHeaderCellDef>Curso</th>
+      <td mat-cell *matCellDef="let t">{{ t.curso }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="acoes">
+      <th mat-header-cell *matHeaderCellDef style="text-align:right;">Ações</th>
+      <td mat-cell *matCellDef="let t">
+        <div class="actions-cell">
+          <button mat-icon-button matTooltip="Detalhes" (click)="abrirDetalhe(t.id)">
+            <mat-icon>info</mat-icon>
+          </button>
+          <button
+            *ngIf="isSecretaria"
+            mat-icon-button
+            color="primary"
+            matTooltip="Editar"
+            (click)="abrirEdicao(t.id)"
+          >
+            <mat-icon>edit</mat-icon>
+          </button>
+          <button
+            *ngIf="isSecretaria"
+            mat-icon-button
+            color="warn"
+            matTooltip="Excluir"
+            (click)="excluir(t.id, t.nome)"
+          >
+            <mat-icon>delete</mat-icon>
+          </button>
+        </div>
+      </td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+    <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
   </table>
 
-  <div *ngIf="!loading && turmas.length === 0" class="empty">
-    Nenhuma turma cadastrada.
+  <div *ngIf="!loading && turmas.length === 0" class="empty-state">
+    <mat-icon style="font-size:48px;width:48px;height:48px;">class</mat-icon>
+    <p>Nenhuma turma cadastrada.</p>
   </div>
 </div>
 
@@ -43,9 +81,3 @@
   [turmaId]="turmaSelecionadaId"
   (close)="fecharModal()">
 </app-turma-form>
-
-<app-turma-detail
-  *ngIf="modalAtivo === 'detail' && turmaSelecionadaId !== null"
-  [turmaId]="turmaSelecionadaId"
-  (close)="fecharModal()">
-</app-turma-detail>

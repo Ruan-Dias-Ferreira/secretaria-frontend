@@ -1,63 +1,93 @@
-<div class="container">
-  <div class="header">
+<div class="page-container">
+  <div class="page-header">
     <h1>Alunos</h1>
-    <button class="btn-primary" (click)="abrirNovo()">+ Novo Aluno</button>
+    <button
+      *ngIf="isSecretaria"
+      mat-flat-button
+      color="primary"
+      (click)="abrirNovo()"
+    >
+      <mat-icon>add</mat-icon>
+      Novo Aluno
+    </button>
   </div>
 
-  <div *ngIf="loading" class="loading">Carregando...</div>
+  <div *ngIf="loading" class="loading-overlay">
+    <mat-spinner diameter="48"></mat-spinner>
+  </div>
 
-  <table *ngIf="!loading && alunos.length > 0">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Nome</th>
-        <th>CPF</th>
-        <th>Email</th>
-        <th>Ações</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let aluno of alunos">
-        <td>{{ aluno.id }}</td>
-        <td>{{ aluno.nome }}</td>
-        <td>{{ aluno.cpf }}</td>
-        <td>{{ aluno.email }}</td>
-        <td class="actions">
-          <button class="btn-secondary" (click)="abrirDetalhe(aluno.id)">Detalhes</button>
-          <button class="btn-secondary" (click)="abrirBoletim(aluno.id)">Boletim</button>
-          <button class="btn-secondary" (click)="abrirFrequencia(aluno.id)">Frequência</button>
-          <button class="btn-secondary" (click)="abrirEdicao(aluno.id)">Editar</button>
-          <button class="btn-danger" (click)="excluir(aluno.id, aluno.nome)">Excluir</button>
-        </td>
-      </tr>
-    </tbody>
+  <table
+    mat-table
+    [dataSource]="alunos"
+    *ngIf="!loading && alunos.length > 0"
+  >
+    <ng-container matColumnDef="id">
+      <th mat-header-cell *matHeaderCellDef>ID</th>
+      <td mat-cell *matCellDef="let a">{{ a.id }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="nome">
+      <th mat-header-cell *matHeaderCellDef>Nome</th>
+      <td mat-cell *matCellDef="let a">{{ a.nome }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="cpf">
+      <th mat-header-cell *matHeaderCellDef>CPF</th>
+      <td mat-cell *matCellDef="let a">{{ a.cpf }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="email">
+      <th mat-header-cell *matHeaderCellDef>Email</th>
+      <td mat-cell *matCellDef="let a">{{ a.email }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="acoes">
+      <th mat-header-cell *matHeaderCellDef style="text-align:right;">Ações</th>
+      <td mat-cell *matCellDef="let a">
+        <div class="actions-cell">
+          <button mat-icon-button matTooltip="Detalhes" (click)="abrirDetalhe(a.id)">
+            <mat-icon>info</mat-icon>
+          </button>
+          <button mat-icon-button matTooltip="Boletim" (click)="abrirBoletim(a.id)">
+            <mat-icon>grade</mat-icon>
+          </button>
+          <button mat-icon-button matTooltip="Frequência" (click)="abrirFrequencia(a.id)">
+            <mat-icon>event_available</mat-icon>
+          </button>
+          <button
+            *ngIf="isSecretaria"
+            mat-icon-button
+            color="primary"
+            matTooltip="Editar"
+            (click)="abrirEdicao(a.id)"
+          >
+            <mat-icon>edit</mat-icon>
+          </button>
+          <button
+            *ngIf="isSecretaria"
+            mat-icon-button
+            color="warn"
+            matTooltip="Excluir"
+            (click)="excluir(a.id, a.nome)"
+          >
+            <mat-icon>delete</mat-icon>
+          </button>
+        </div>
+      </td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+    <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
   </table>
 
-  <div *ngIf="!loading && alunos.length === 0" class="empty">
-    Nenhum aluno cadastrado.
+  <div *ngIf="!loading && alunos.length === 0" class="empty-state">
+    <mat-icon style="font-size:48px;width:48px;height:48px;">people_outline</mat-icon>
+    <p>Nenhum aluno cadastrado.</p>
   </div>
 </div>
 
 <app-aluno-form
   *ngIf="modalAtivo === 'form'"
   [alunoId]="alunoSelecionadoId"
-  (close)="fecharModal()">
-</app-aluno-form>
-
-<app-aluno-detail
-  *ngIf="modalAtivo === 'detail' && alunoSelecionadoId !== null"
-  [alunoId]="alunoSelecionadoId"
-  (close)="fecharModal()">
-</app-aluno-detail>
-
-<app-boletim-modal
-  *ngIf="modalAtivo === 'boletim' && alunoSelecionadoId !== null"
-  [alunoId]="alunoSelecionadoId"
-  (close)="fecharModal()">
-</app-boletim-modal>
-
-<app-frequencia-modal
-  *ngIf="modalAtivo === 'frequencia' && alunoSelecionadoId !== null"
-  [alunoId]="alunoSelecionadoId"
-  (close)="fecharModal()">
-</app-frequencia-modal>
+  (close)="fecharModal()"
+></app-aluno-form>

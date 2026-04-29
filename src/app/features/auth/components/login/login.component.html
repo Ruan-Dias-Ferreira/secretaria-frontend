@@ -1,54 +1,46 @@
+<mat-card>
+  <mat-card-header>
+    <mat-icon class="login-icon">school</mat-icon>
+  </mat-card-header>
 
-
-<div class="login-wrapper">
-  <div class="login-card">
-
-    <h1 class="login-title">Secretaria Escolar</h1>
-    <p class="login-subtitle">Acesse sua conta</p>
+  <mat-card-content>
+    <h2 style="text-align:center; margin: 0 0 24px;">Secretaria Escolar</h2>
 
     <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Login</mat-label>
+        <input matInput formControlName="login" autocomplete="username" />
+        <mat-icon matSuffix>person</mat-icon>
+        <mat-error *ngIf="login?.hasError('required')">Login obrigatório.</mat-error>
+      </mat-form-field>
 
-      <div class="field">
-        <label for="login">Login</label>
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Senha</mat-label>
         <input
-          id="login"
-          type="text"
-          formControlName="login"
-          placeholder="Digite seu login"
-          autocomplete="username"
-        />
-        <span class="field-error"
-              *ngIf="login?.invalid && login?.touched">
-          Login é obrigatório.
-        </span>
-      </div>
-
-      <div class="field">
-        <label for="senha">Senha</label>
-        <input
-          id="senha"
-          type="password"
+          matInput
+          [type]="hidePassword ? 'password' : 'text'"
           formControlName="senha"
-          placeholder="Digite sua senha"
           autocomplete="current-password"
         />
-        <span class="field-error"
-              *ngIf="senha?.invalid && senha?.touched">
-          Senha inválida — mínimo 6 caracteres.
-        </span>
+        <button
+          mat-icon-button
+          matSuffix
+          type="button"
+          (click)="hidePassword = !hidePassword"
+          [attr.aria-label]="'Mostrar senha'"
+        >
+          <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+        </button>
+        <mat-error *ngIf="senha?.hasError('required')">Senha obrigatória.</mat-error>
+        <mat-error *ngIf="senha?.hasError('minlength')">Mínimo 6 caracteres.</mat-error>
+      </mat-form-field>
+
+      <div class="submit-row">
+        <button mat-flat-button color="primary" type="submit" [disabled]="loading">
+          <mat-spinner *ngIf="loading" diameter="20" style="display:inline-block; margin-right:8px;"></mat-spinner>
+          {{ loading ? 'Entrando...' : 'Entrar' }}
+        </button>
       </div>
-
-      <span class="submit-error" *ngIf="errorMsg">
-        {{ errorMsg }}
-      </span>
-
-      <button
-        type="submit"
-        class="btn-submit"
-        [disabled]="loading">
-        {{ loading ? 'Entrando...' : 'Entrar' }}
-      </button>
-
     </form>
-  </div>
-</div>
+  </mat-card-content>
+</mat-card>

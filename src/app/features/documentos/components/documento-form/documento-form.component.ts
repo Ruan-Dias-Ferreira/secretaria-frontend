@@ -3,41 +3,57 @@ import { Component, EventEmitter, OnDestroy, OnInit, Output } from '@angular/cor
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Subject, takeUntil } from 'rxjs';
 
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+
 import { DocumentoRequest } from '../../../../core/models/requests/documento.request';
 import { DocumentoService } from '../../services/documento.service';
 import { AlunoService } from '../../../alunos/services/aluno.service';
 import { AlunoResponse } from '../../../../core/models/responses/aluno.response';
 import { TipoDocumento } from '../../../../core/models/enums/tipo-documento.enum';
+import { NotificationService } from '../../../../core/services/notification.service';
+
+const TIPO_LABELS: Record<string, string> = {
+  DECLARACAO_MATRICULA:  'Declaração de Matrícula',
+  HISTORICO_ESCOLAR:     'Histórico Escolar',
+  DECLARACAO_FREQUENCIA: 'Declaração de Frequência'
+};
 
 @Component({
   selector: 'app-documento-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
+    MatButtonModule,
+    MatIconModule,
+    MatProgressSpinnerModule
+  ],
   templateUrl: './documento-form.component.html',
   styles: [`
     .overlay {
-      position: fixed; inset: 0; background: rgba(0,0,0,.5);
+      position: fixed; inset: 0; background: rgba(0,0,0,.45);
       display: flex; align-items: center; justify-content: center; z-index: 1000;
     }
-    .modal {
-      background: #fff; border-radius: 8px; padding: 24px;
-      width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto;
+    .dialog-card {
+      background: #fff; border-radius: 12px; padding: 28px 32px;
+      width: 90%; max-width: 480px; max-height: 90vh; overflow-y: auto;
+      box-shadow: 0 8px 30px rgba(0,0,0,.2);
     }
-    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-    .modal-header h2 { margin: 0; }
-    .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; }
-    .form-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
-    label { display: block; font-size: 13px; margin-bottom: 4px; color: #374151; }
-    select { width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px; box-sizing: border-box; }
-    select.invalid { border-color: #dc2626; }
-    .error { color: #dc2626; font-size: 12px; margin-top: 2px; }
-    .actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
-    button { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; }
-    .btn-primary { background: #2563eb; color: #fff; }
-    .btn-primary:disabled { background: #93c5fd; cursor: not-allowed; }
-    .btn-secondary { background: #e5e7eb; color: #111827; }
-    .alert { padding: 8px 12px; background: #fee2e2; color: #991b1b; border-radius: 4px; margin-bottom: 12px; }
-    .info { padding: 8px 12px; background: #eff6ff; color: #1e40af; border-radius: 4px; margin-bottom: 12px; font-size: 13px; }
+    .dialog-title { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .dialog-title h2 { margin: 0; font-weight: 500; }
+    .dialog-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+    .loading-inline { display: flex; align-items: center; gap: 8px; }
+    .spinner-center { display: flex; justify-content: center; padding: 32px 0; }
+    .info-hint { color: #1e40af; background: #eff6ff; border-radius: 6px;
+      padding: 8px 12px; font-size: 13px; margin-bottom: 16px; }
   `]
 })
 export class DocumentoFormComponent implements OnInit, OnDestroy {
@@ -46,31 +62,25 @@ export class DocumentoFormComponent implements OnInit, OnDestroy {
 
   form!: FormGroup;
   loading = false;
-  errorMsg = '';
 
   alunos: AlunoResponse[] = [];
-  tipoOptions = Object.values(TipoDocumento);
-
-  tipoLabels: Record<string, string> = {
-    'DECLARACAO_MATRICULA': 'Declaração de Matrícula',
-    'HISTORICO_ESCOLAR': 'Histórico Escolar',
-    'DECLARACAO_FREQUENCIA': 'Declaração de Frequência'
-  };
+  readonly tipoOptions = Object.values(TipoDocumento);
+  readonly tipoLabels = TIPO_LABELS;
 
   private destroy$ = new Subject<void>();
 
   constructor(
     private fb: FormBuilder,
     private documentoService: DocumentoService,
-    private alunoService: AlunoService
+    private alunoService: AlunoService,
+    private notification: NotificationService
   ) {}
 
   ngOnInit(): void {
     this.form = this.fb.group({
       alunoId: [null, [Validators.required]],
-      tipo: [null, [Validators.required]]
+      tipo:    [null, [Validators.required]]
     });
-
     this.carregarAlunos();
   }
 
@@ -79,52 +89,29 @@ export class DocumentoFormComponent implements OnInit, OnDestroy {
     this.alunoService.findAll()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (alunos) => {
-          this.alunos = alunos;
-          this.loading = false;
-        },
-        error: () => {
-          this.errorMsg = 'Erro ao carregar lista de alunos.';
-          this.loading = false;
-        }
+        next: alunos => { this.alunos = alunos; this.loading = false; },
+        error: () => { this.loading = false; }
       });
   }
 
   onSubmit(): void {
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      return;
-    }
-
+    if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     this.loading = true;
-    this.errorMsg = '';
     const request = this.form.value as DocumentoRequest;
 
     this.documentoService.save(request)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
+          this.notification.success('Documento emitido com sucesso.');
           this.loading = false;
           this.close.emit();
         },
-        error: () => {
-          this.errorMsg = 'Erro ao emitir documento.';
-          this.loading = false;
-        }
+        error: () => { this.loading = false; }
       });
   }
 
-  cancelar(): void {
-    this.close.emit();
-  }
+  cancelar(): void { this.close.emit(); }
 
-  campoInvalido(nome: string): boolean {
-    const c = this.form.get(nome);
-    return !!(c && c.invalid && c.touched);
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
-  }
+  ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
 }

@@ -2,47 +2,48 @@
   <div class="modal" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <h2>{{ isEdicao ? 'Editar Turma' : 'Nova Turma' }}</h2>
-      <button class="close-btn" (click)="cancelar()">&times;</button>
+      <button mat-icon-button (click)="cancelar()" aria-label="Fechar">
+        <mat-icon>close</mat-icon>
+      </button>
     </div>
-
-    <div *ngIf="errorMsg" class="alert">{{ errorMsg }}</div>
 
     <form [formGroup]="form" (ngSubmit)="onSubmit()" *ngIf="form">
       <div class="form-grid">
-        <div class="full">
-          <label>Nome *</label>
-          <input formControlName="nome" [class.invalid]="campoInvalido('nome')" />
-          <div class="error" *ngIf="campoInvalido('nome')">Nome é obrigatório (mín. 2 caracteres).</div>
-        </div>
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>Nome</mat-label>
+          <input matInput formControlName="nome" />
+          <mat-error *ngIf="form.get('nome')?.hasError('required')">Nome é obrigatório.</mat-error>
+          <mat-error *ngIf="form.get('nome')?.hasError('minlength')">Mínimo 2 caracteres.</mat-error>
+        </mat-form-field>
 
-        <div>
-          <label>Ano Letivo *</label>
-          <input type="number" formControlName="anoLetivo" [class.invalid]="campoInvalido('anoLetivo')" />
-          <div class="error" *ngIf="campoInvalido('anoLetivo')">Informe um ano válido.</div>
-        </div>
+        <mat-form-field appearance="outline">
+          <mat-label>Ano Letivo</mat-label>
+          <input matInput type="number" formControlName="anoLetivo" />
+          <mat-error *ngIf="form.get('anoLetivo')?.invalid">Informe um ano válido.</mat-error>
+        </mat-form-field>
 
-        <div>
-          <label>Turno *</label>
-          <select formControlName="turno" [class.invalid]="campoInvalido('turno')">
-            <option value="MANHA">Manhã</option>
-            <option value="TARDE">Tarde</option>
-            <option value="NOITE">Noite</option>
-            <option value="INTEGRAL">Integral</option>
-          </select>
-          <div class="error" *ngIf="campoInvalido('turno')">Selecione um turno.</div>
-        </div>
+        <mat-form-field appearance="outline">
+          <mat-label>Turno</mat-label>
+          <mat-select formControlName="turno">
+            <mat-option *ngFor="let t of turnos" [value]="t.value">{{ t.label }}</mat-option>
+          </mat-select>
+          <mat-error *ngIf="form.get('turno')?.hasError('required')">Selecione um turno.</mat-error>
+        </mat-form-field>
 
-        <div class="full">
-          <label>Curso *</label>
-          <input formControlName="curso" [class.invalid]="campoInvalido('curso')" />
-          <div class="error" *ngIf="campoInvalido('curso')">Curso é obrigatório.</div>
-        </div>
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>Curso</mat-label>
+          <input matInput formControlName="curso" />
+          <mat-error *ngIf="form.get('curso')?.hasError('required')">Curso é obrigatório.</mat-error>
+        </mat-form-field>
       </div>
 
       <div class="actions">
-        <button type="button" class="btn-secondary" (click)="cancelar()">Cancelar</button>
-        <button type="submit" class="btn-primary" [disabled]="loading">
-          {{ loading ? 'Salvando...' : (isEdicao ? 'Atualizar' : 'Salvar') }}
+        <button type="button" mat-button (click)="cancelar()">Cancelar</button>
+        <button type="submit" mat-flat-button color="primary" [disabled]="loading">
+          <span *ngIf="!loading">{{ isEdicao ? 'Atualizar' : 'Salvar' }}</span>
+          <span *ngIf="loading" class="loading-inline">
+            <mat-spinner diameter="18"></mat-spinner> Salvando...
+          </span>
         </button>
       </div>
     </form>

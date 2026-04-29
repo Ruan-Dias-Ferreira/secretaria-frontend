@@ -1,41 +1,70 @@
-<div class="container">
-  <div class="header">
+<div class="page-container">
+  <div class="page-header">
     <h1>Notas</h1>
-    <button class="btn-primary" (click)="abrirNovo()">+ Nova Nota</button>
+    <button mat-flat-button color="primary" (click)="abrirNovo()">
+      <mat-icon>add</mat-icon>
+      Nova Nota
+    </button>
   </div>
 
-  <div *ngIf="loading" class="loading">Carregando...</div>
+  <div *ngIf="loading" class="loading-overlay">
+    <mat-spinner diameter="48"></mat-spinner>
+  </div>
 
-  <table *ngIf="!loading && notas.length > 0">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Aluno ID</th>
-        <th>Disciplina ID</th>
-        <th>Bimestre</th>
-        <th>Valor</th>
-        <th>Situação</th>
-        <th>Ações</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let n of notas">
-        <td>{{ n.id }}</td>
-        <td>{{ n.alunoId }}</td>
-        <td>{{ n.disciplinaId }}</td>
-        <td>{{ n.bimestre }}º</td>
-        <td>{{ n.valor }}</td>
-        <td><span class="badge" [ngClass]="getSituacaoClass(n.situacaoNota)">{{ n.situacaoNota }}</span></td>
-        <td class="actions">
-          <button class="btn-secondary" (click)="abrirEdicao(n.id)">Editar</button>
-          <button class="btn-danger" (click)="excluir(n.id)">Excluir</button>
-        </td>
-      </tr>
-    </tbody>
+  <table mat-table [dataSource]="notas" *ngIf="!loading && notas.length > 0">
+    <ng-container matColumnDef="id">
+      <th mat-header-cell *matHeaderCellDef>ID</th>
+      <td mat-cell *matCellDef="let n">{{ n.id }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="alunoId">
+      <th mat-header-cell *matHeaderCellDef>Aluno (ID)</th>
+      <td mat-cell *matCellDef="let n">#{{ n.alunoId }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="disciplinaId">
+      <th mat-header-cell *matHeaderCellDef>Disciplina (ID)</th>
+      <td mat-cell *matCellDef="let n">#{{ n.disciplinaId }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="bimestre">
+      <th mat-header-cell *matHeaderCellDef>Bimestre</th>
+      <td mat-cell *matCellDef="let n">{{ n.bimestre }}º</td>
+    </ng-container>
+
+    <ng-container matColumnDef="valor">
+      <th mat-header-cell *matHeaderCellDef>Valor</th>
+      <td mat-cell *matCellDef="let n">{{ n.valor }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="situacao">
+      <th mat-header-cell *matHeaderCellDef>Situação</th>
+      <td mat-cell *matCellDef="let n">
+        <span class="badge" [ngClass]="getSituacaoClass(n.situacaoNota)">{{ n.situacaoNota }}</span>
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="acoes">
+      <th mat-header-cell *matHeaderCellDef style="text-align:right;">Ações</th>
+      <td mat-cell *matCellDef="let n">
+        <div class="actions-cell">
+          <button mat-icon-button color="primary" matTooltip="Editar" (click)="abrirEdicao(n.id)">
+            <mat-icon>edit</mat-icon>
+          </button>
+          <button mat-icon-button color="warn" matTooltip="Excluir" (click)="excluir(n.id)">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </div>
+      </td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+    <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
   </table>
 
-  <div *ngIf="!loading && notas.length === 0" class="empty">
-    Nenhuma nota cadastrada.
+  <div *ngIf="!loading && notas.length === 0" class="empty-state">
+    <mat-icon style="font-size:48px;width:48px;height:48px;">grade</mat-icon>
+    <p>Nenhuma nota cadastrada.</p>
   </div>
 </div>
 

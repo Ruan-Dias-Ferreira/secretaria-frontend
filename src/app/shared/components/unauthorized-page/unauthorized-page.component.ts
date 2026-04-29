@@ -1,4 +1,5 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-unauthorized-page',
@@ -18,7 +19,9 @@ import { Component } from '@angular/core';
   `]
 })
 export class UnauthorizedPageComponent {
+  private readonly router = inject(Router);
+
   voltar(): void {
-    window.location.href = '/auth/login';
+    this.router.navigate(['/auth/login']);
   }
 }

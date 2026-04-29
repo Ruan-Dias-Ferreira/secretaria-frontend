@@ -1,34 +1,44 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject, finalize, takeUntil } from 'rxjs';
+
+import { MatTableModule } from '@angular/material/table';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 
 import { DisciplinaResponse } from '../../../../core/models/responses/disciplina.response';
 import { DisciplinaService } from '../../services/disciplina.service';
+import { AuthService } from '../../../../core/services/auth.service';
+import { Role } from '../../../../core/models/enums/role.enum';
+import { ConfirmDialogService } from '../../../../core/services/confirm-dialog.service';
+import { NotificationService } from '../../../../core/services/notification.service';
 import { DisciplinaFormComponent } from '../disciplina-form/disciplina-form.component';
-import { DisciplinaDetailComponent } from '../disciplina-detail/disciplina-detail.component';
+import { DisciplinaDetailComponent, DisciplinaDetailData } from '../disciplina-detail/disciplina-detail.component';
 
-type ModalAtivo = 'form' | 'detail' | null;
+type ModalAtivo = 'form' | null;
 
 @Component({
   selector: 'app-disciplina-list',
   standalone: true,
-  imports: [CommonModule, DisciplinaFormComponent, DisciplinaDetailComponent],
+  imports: [
+    CommonModule,
+    MatTableModule,
+    MatButtonModule,
+    MatIconModule,
+    MatProgressSpinnerModule,
+    MatTooltipModule,
+    MatDialogModule,
+    DisciplinaFormComponent
+  ],
   templateUrl: './disciplina-list.component.html',
   styles: [`
-    .container { padding: 24px; max-width: 1100px; margin: 0 auto; }
-    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-    h1 { margin: 0; }
-    button { padding: 8px 14px; border: none; border-radius: 6px; cursor: pointer; }
-    .btn-primary { background: #2563eb; color: #fff; }
-    .btn-secondary { background: #e5e7eb; color: #111827; }
-    .btn-danger { background: #dc2626; color: #fff; }
-    table { width: 100%; border-collapse: collapse; background: #fff; }
-    th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e5e7eb; }
-    th { background: #f9fafb; font-weight: 600; }
-    .actions { display: flex; gap: 6px; }
-    .actions button { padding: 6px 10px; font-size: 12px; }
-    .empty, .loading { text-align: center; padding: 32px; color: #6b7280; }
-    .muted { color: #9ca3af; font-style: italic; }
+    table { width: 100%; }
+    .actions-cell { display: flex; gap: 4px; justify-content: flex-end; }
+    h1 { margin: 0; font-size: 24px; font-weight: 500; }
+    .muted { color: var(--mat-sys-on-surface-variant); font-style: italic; }
   `]
 })
 export class DisciplinaListComponent implements OnInit, OnDestroy {
@@ -38,56 +48,58 @@ export class DisciplinaListComponent implements OnInit, OnDestroy {
   modalAtivo: ModalAtivo = null;
   disciplinaSelecionadaId: number | null = null;
 
+  readonly displayedColumns = ['id', 'nome', 'cargaHoraria', 'turma', 'professor', 'acoes'];
+
   private destroy$ = new Subject<void>();
 
-  constructor(private disciplinaService: DisciplinaService) {}
+  constructor(
+    private disciplinaService: DisciplinaService,
+    private auth: AuthService,
+    private dialog: MatDialog,
+    private confirmDialog: ConfirmDialogService,
+    private notification: NotificationService
+  ) {}
+
+  get isSecretaria(): boolean { return this.auth.hasRole(Role.SECRETARIA); }
 
   ngOnInit(): void {
-    this.carregarDisciplinas();
+    this.carregar();
     this.disciplinaService.disciplinaAtualizada$
       .pipe(takeUntil(this.destroy$))
-      .subscribe(() => this.carregarDisciplinas());
+      .subscribe(() => this.carregar());
   }
 
-  carregarDisciplinas(): void {
+  carregar(): void {
     this.loading = true;
     this.disciplinaService.findAll()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (data) => { this.disciplinas = data; this.loading = false; },
+        next: d => { this.disciplinas = d; this.loading = false; },
         error: () => { this.loading = false; }
       });
   }
 
-  abrirNovo(): void {
-    this.disciplinaSelecionadaId = null;
-    this.modalAtivo = 'form';
-  }
-
-  abrirEdicao(id: number): void {
-    this.disciplinaSelecionadaId = id;
-    this.modalAtivo = 'form';
-  }
+  abrirNovo(): void { this.disciplinaSelecionadaId = null; this.modalAtivo = 'form'; }
+  abrirEdicao(id: number): void { this.disciplinaSelecionadaId = id; this.modalAtivo = 'form'; }
 
   abrirDetalhe(id: number): void {
-    this.disciplinaSelecionadaId = id;
-    this.modalAtivo = 'detail';
+    this.dialog.open(DisciplinaDetailComponent, {
+      data: { disciplinaId: id } satisfies DisciplinaDetailData
+    });
   }
 
-  fecharModal(): void {
-    this.modalAtivo = null;
-    this.disciplinaSelecionadaId = null;
-  }
+  fecharModal(): void { this.modalAtivo = null; this.disciplinaSelecionadaId = null; }
 
   excluir(id: number, nome: string): void {
-    if (!confirm(`Excluir a disciplina "${nome}"?`)) return;
-    this.disciplinaService.delete(id)
+    this.confirmDialog.confirmDelete(`Excluir a disciplina "${nome}"? Esta ação não pode ser desfeita.`)
       .pipe(takeUntil(this.destroy$))
-      .subscribe();
+      .subscribe(ok => {
+        if (!ok) return;
+        this.disciplinaService.delete(id)
+          .pipe(takeUntil(this.destroy$))
+          .subscribe(() => this.notification.success('Disciplina excluída.'));
+      });
   }
 
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
-  }
+  ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
 }

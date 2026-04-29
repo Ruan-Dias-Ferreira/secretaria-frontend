@@ -3,6 +3,13 @@ import { Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angu
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Subject, forkJoin, takeUntil } from 'rxjs';
 
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+
 import { DisciplinaRequest } from '../../../../core/models/requests/disciplina.request';
 import { TurmaResponse } from '../../../../core/models/responses/turma.response';
 import { UsuarioResponse } from '../../../../core/models/responses/usuario.response';
@@ -10,11 +17,21 @@ import { Role } from '../../../../core/models/enums/role.enum';
 import { DisciplinaService } from '../../services/disciplina.service';
 import { TurmaService } from '../../../turmas/services/turma.service';
 import { UsuarioService } from '../../../usuarios/services/usuario.service';
+import { NotificationService } from '../../../../core/services/notification.service';
 
 @Component({
   selector: 'app-disciplina-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
+    MatButtonModule,
+    MatIconModule,
+    MatProgressSpinnerModule
+  ],
   templateUrl: './disciplina-form.component.html',
   styles: [`
     .overlay {
@@ -22,24 +39,17 @@ import { UsuarioService } from '../../../usuarios/services/usuario.service';
       display: flex; align-items: center; justify-content: center; z-index: 1000;
     }
     .modal {
-      background: #fff; border-radius: 8px; padding: 24px;
-      width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto;
+      background: var(--mat-sys-surface); border-radius: 12px; padding: 24px;
+      width: 90%; max-width: 560px; max-height: 90vh; overflow-y: auto;
+      box-shadow: var(--mat-sys-level3);
     }
     .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-    .modal-header h2 { margin: 0; }
-    .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; }
-    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .modal-header h2 { margin: 0; font-size: 20px; font-weight: 500; }
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
     .form-grid .full { grid-column: 1 / -1; }
-    label { display: block; font-size: 13px; margin-bottom: 4px; color: #374151; }
-    input, select { width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px; box-sizing: border-box; }
-    input.invalid, select.invalid { border-color: #dc2626; }
-    .error { color: #dc2626; font-size: 12px; margin-top: 2px; }
     .actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
-    button { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; }
-    .btn-primary { background: #2563eb; color: #fff; }
-    .btn-primary:disabled { background: #93c5fd; cursor: not-allowed; }
-    .btn-secondary { background: #e5e7eb; color: #111827; }
-    .alert { padding: 8px 12px; background: #fee2e2; color: #991b1b; border-radius: 4px; margin-bottom: 12px; }
+    .loading-inline { display: inline-flex; align-items: center; gap: 8px; }
+    mat-form-field { width: 100%; }
   `]
 })
 export class DisciplinaFormComponent implements OnInit, OnDestroy {
@@ -49,7 +59,6 @@ export class DisciplinaFormComponent implements OnInit, OnDestroy {
 
   form!: FormGroup;
   loading = false;
-  errorMsg = '';
 
   turmas: TurmaResponse[] = [];
   professores: UsuarioResponse[] = [];
@@ -60,7 +69,8 @@ export class DisciplinaFormComponent implements OnInit, OnDestroy {
     private fb: FormBuilder,
     private disciplinaService: DisciplinaService,
     private turmaService: TurmaService,
-    private usuarioService: UsuarioService
+    private usuarioService: UsuarioService,
+    private notification: NotificationService
   ) {}
 
   ngOnInit(): void {
@@ -74,9 +84,7 @@ export class DisciplinaFormComponent implements OnInit, OnDestroy {
     this.carregarDropdowns();
   }
 
-  get isEdicao(): boolean {
-    return this.disciplinaId !== null;
-  }
+  get isEdicao(): boolean { return this.disciplinaId !== null; }
 
   private carregarDropdowns(): void {
     this.loading = true;
@@ -95,10 +103,7 @@ export class DisciplinaFormComponent implements OnInit, OnDestroy {
           this.loading = false;
         }
       },
-      error: () => {
-        this.errorMsg = 'Erro ao carregar opções de turma/professor.';
-        this.loading = false;
-      }
+      error: () => { this.loading = false; }
     });
   }
 
@@ -106,19 +111,16 @@ export class DisciplinaFormComponent implements OnInit, OnDestroy {
     this.disciplinaService.findById(id)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (disciplina) => {
+        next: d => {
           this.form.patchValue({
-            nome: disciplina.nome,
-            cargaHoraria: disciplina.cargaHoraria,
-            turmaId: disciplina.turmaId,
-            professorId: disciplina.professorId
+            nome: d.nome,
+            cargaHoraria: d.cargaHoraria,
+            turmaId: d.turmaId,
+            professorId: d.professorId
           });
           this.loading = false;
         },
-        error: () => {
-          this.errorMsg = 'Erro ao carregar dados da disciplina.';
-          this.loading = false;
-        }
+        error: () => { this.loading = false; }
       });
   }
 
@@ -127,9 +129,7 @@ export class DisciplinaFormComponent implements OnInit, OnDestroy {
       this.form.markAllAsTouched();
       return;
     }
-
     this.loading = true;
-    this.errorMsg = '';
     const raw = this.form.value;
     const request: DisciplinaRequest = {
       nome: raw.nome,
@@ -138,35 +138,21 @@ export class DisciplinaFormComponent implements OnInit, OnDestroy {
       professorId: raw.professorId ?? undefined
     };
 
-    const operacao$ = this.isEdicao && this.disciplinaId !== null
+    const op$ = this.isEdicao && this.disciplinaId !== null
       ? this.disciplinaService.update(this.disciplinaId, request)
       : this.disciplinaService.save(request);
 
-    operacao$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: () => {
-          this.loading = false;
-          this.close.emit();
-        },
-        error: () => {
-          this.errorMsg = 'Erro ao salvar. Verifique os dados.';
-          this.loading = false;
-        }
-      });
+    op$.pipe(takeUntil(this.destroy$)).subscribe({
+      next: () => {
+        this.loading = false;
+        this.notification.success(this.isEdicao ? 'Disciplina atualizada.' : 'Disciplina cadastrada.');
+        this.close.emit();
+      },
+      error: () => { this.loading = false; }
+    });
   }
 
-  cancelar(): void {
-    this.close.emit();
-  }
+  cancelar(): void { this.close.emit(); }
 
-  campoInvalido(nome: string): boolean {
-    const c = this.form.get(nome);
-    return !!(c && c.invalid && c.touched);
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
-  }
+  ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
 }

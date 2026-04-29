@@ -1,32 +1,44 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject, finalize, takeUntil } from 'rxjs';
+
+import { MatTableModule } from '@angular/material/table';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 import { FrequenciaResponse } from '../../../../core/models/responses/frequencia.response';
 import { FrequenciaService } from '../../services/frequencia.service';
+import { AuthService } from '../../../../core/services/auth.service';
+import { Role } from '../../../../core/models/enums/role.enum';
 import { FrequenciaFormComponent } from '../frequencia-form/frequencia-form.component';
+import { ConfirmDialogService } from '../../../../core/services/confirm-dialog.service';
+import { NotificationService } from '../../../../core/services/notification.service';
 
 @Component({
   selector: 'app-frequencia-list',
   standalone: true,
-  imports: [CommonModule, FrequenciaFormComponent],
+  imports: [
+    CommonModule,
+    MatTableModule,
+    MatButtonModule,
+    MatIconModule,
+    MatProgressSpinnerModule,
+    MatTooltipModule,
+    FrequenciaFormComponent
+  ],
   templateUrl: './frequencia-list.component.html',
   styles: [`
-    .container { padding: 24px; max-width: 1100px; margin: 0 auto; }
-    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-    h1 { margin: 0; }
-    button { padding: 8px 14px; border: none; border-radius: 6px; cursor: pointer; }
-    .btn-primary { background: #2563eb; color: #fff; }
-    .btn-secondary { background: #e5e7eb; color: #111827; }
-    .btn-danger { background: #dc2626; color: #fff; }
-    table { width: 100%; border-collapse: collapse; background: #fff; }
-    th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e5e7eb; }
-    th { background: #f9fafb; font-weight: 600; }
-    .actions { display: flex; gap: 6px; }
-    .actions button { padding: 6px 10px; font-size: 12px; }
-    .empty, .loading { text-align: center; padding: 32px; color: #6b7280; }
-    .presente { color: #065f46; font-weight: 600; }
-    .ausente { color: #991b1b; font-weight: 600; }
+    table { width: 100%; }
+    .actions-cell { display: flex; gap: 4px; justify-content: flex-end; }
+    h1 { margin: 0; font-size: 24px; font-weight: 500; }
+    .badge {
+      display: inline-block; padding: 4px 10px; border-radius: 12px;
+      font-size: 12px; font-weight: 600;
+    }
+    .badge-presente { background: #d1fae5; color: #065f46; }
+    .badge-ausente  { background: #fee2e2; color: #991b1b; }
   `]
 })
 export class FrequenciaListComponent implements OnInit, OnDestroy {
@@ -36,51 +48,50 @@ export class FrequenciaListComponent implements OnInit, OnDestroy {
   modalFormAberto = false;
   frequenciaSelecionadaId: number | null = null;
 
+  readonly displayedColumns = ['id', 'alunoId', 'disciplinaId', 'data', 'presente', 'acoes'];
+
   private destroy$ = new Subject<void>();
 
-  constructor(private frequenciaService: FrequenciaService) {}
+  constructor(
+    private frequenciaService: FrequenciaService,
+    private auth: AuthService,
+    private confirmDialog: ConfirmDialogService,
+    private notification: NotificationService
+  ) {}
+
+  get isSecretaria(): boolean { return this.auth.hasRole(Role.SECRETARIA); }
 
   ngOnInit(): void {
-    this.carregarFrequencias();
+    this.carregar();
     this.frequenciaService.frequenciaAtualizada$
       .pipe(takeUntil(this.destroy$))
-      .subscribe(() => this.carregarFrequencias());
+      .subscribe(() => this.carregar());
   }
 
-  carregarFrequencias(): void {
+  carregar(): void {
     this.loading = true;
     this.frequenciaService.findAll()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (data) => { this.frequencias = data; this.loading = false; },
+        next: d => { this.frequencias = d; this.loading = false; },
         error: () => { this.loading = false; }
       });
   }
 
-  abrirNovo(): void {
-    this.frequenciaSelecionadaId = null;
-    this.modalFormAberto = true;
-  }
-
-  abrirEdicao(id: number): void {
-    this.frequenciaSelecionadaId = id;
-    this.modalFormAberto = true;
-  }
-
-  fecharModal(): void {
-    this.modalFormAberto = false;
-    this.frequenciaSelecionadaId = null;
-  }
+  abrirNovo(): void { this.frequenciaSelecionadaId = null; this.modalFormAberto = true; }
+  abrirEdicao(id: number): void { this.frequenciaSelecionadaId = id; this.modalFormAberto = true; }
+  fecharModal(): void { this.modalFormAberto = false; this.frequenciaSelecionadaId = null; }
 
   excluir(id: number): void {
-    if (!confirm('Excluir este registro de frequência?')) return;
-    this.frequenciaService.delete(id)
+    this.confirmDialog.confirmDelete('Excluir este registro de frequência? Esta ação não pode ser desfeita.')
       .pipe(takeUntil(this.destroy$))
-      .subscribe();
+      .subscribe(ok => {
+        if (!ok) return;
+        this.frequenciaService.delete(id)
+          .pipe(takeUntil(this.destroy$))
+          .subscribe(() => this.notification.success('Frequência excluída.'));
+      });
   }
 
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
-  }
+  ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
 }

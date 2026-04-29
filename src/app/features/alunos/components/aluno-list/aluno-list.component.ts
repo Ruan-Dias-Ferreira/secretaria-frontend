@@ -1,58 +1,71 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject, finalize, takeUntil } from 'rxjs';
+
+import { MatTableModule } from '@angular/material/table';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 
 import { AlunoResponse } from '../../../../core/models/responses/aluno.response';
 import { AlunoService } from '../../services/aluno.service';
+import { AuthService } from '../../../../core/services/auth.service';
+import { Role } from '../../../../core/models/enums/role.enum';
+import { ConfirmDialogService } from '../../../../core/services/confirm-dialog.service';
+import { NotificationService } from '../../../../core/services/notification.service';
 import { AlunoFormComponent } from '../aluno-form/aluno-form.component';
-import { AlunoDetailComponent } from '../aluno-detail/aluno-detail.component';
-import { BoletimModalComponent } from '../boletim-modal/boletim-modal.component';
-import { FrequenciaModalComponent } from '../frequencia-modal/frequencia-modal.component';
+import { AlunoDetailComponent, AlunoDetailData } from '../aluno-detail/aluno-detail.component';
+import { BoletimModalComponent, BoletimDialogData } from '../boletim-modal/boletim-modal.component';
+import { FrequenciaModalComponent, FrequenciaDialogData } from '../frequencia-modal/frequencia-modal.component';
 
-type ModalAtivo = 'form' | 'detail' | 'boletim' | 'frequencia' | null;
+type ModalAtivo = 'form' | null;
 
 @Component({
   selector: 'app-aluno-list',
   standalone: true,
   imports: [
     CommonModule,
-    AlunoFormComponent,
-    AlunoDetailComponent,
-    BoletimModalComponent,
-    FrequenciaModalComponent
+    MatTableModule,
+    MatButtonModule,
+    MatIconModule,
+    MatProgressSpinnerModule,
+    MatTooltipModule,
+    MatDialogModule,
+    AlunoFormComponent
   ],
   templateUrl: './aluno-list.component.html',
   styles: [`
-    .container { padding: 24px; max-width: 1100px; margin: 0 auto; }
-    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-    h1 { margin: 0; }
-    button { padding: 8px 14px; border: none; border-radius: 6px; cursor: pointer; }
-    .btn-primary { background: #2563eb; color: #fff; }
-    .btn-secondary { background: #e5e7eb; color: #111827; }
-    .btn-danger { background: #dc2626; color: #fff; }
-    table { width: 100%; border-collapse: collapse; background: #fff; }
-    th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e5e7eb; }
-    th { background: #f9fafb; font-weight: 600; }
-    .actions { display: flex; gap: 6px; }
-    .actions button { padding: 6px 10px; font-size: 12px; }
-    .empty { text-align: center; padding: 32px; color: #6b7280; }
-    .loading { text-align: center; padding: 32px; }
+    table { width: 100%; }
+    .actions-cell { display: flex; gap: 4px; justify-content: flex-end; }
+    h1 { margin: 0; font-size: 24px; font-weight: 500; }
   `]
 })
 export class AlunoListComponent implements OnInit, OnDestroy {
-
   alunos: AlunoResponse[] = [];
   loading = false;
   modalAtivo: ModalAtivo = null;
   alunoSelecionadoId: number | null = null;
 
+  readonly displayedColumns = ['id', 'nome', 'cpf', 'email', 'acoes'];
+
   private destroy$ = new Subject<void>();
 
-  constructor(private alunoService: AlunoService) {}
+  constructor(
+    private alunoService: AlunoService,
+    private auth: AuthService,
+    private confirmDialog: ConfirmDialogService,
+    private notification: NotificationService,
+    private dialog: MatDialog
+  ) {}
+
+  get isSecretaria(): boolean {
+    return this.auth.hasRole(Role.SECRETARIA);
+  }
 
   ngOnInit(): void {
     this.carregarAlunos();
-
     this.alunoService.alunoAtualizado$
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => this.carregarAlunos());
@@ -63,37 +76,30 @@ export class AlunoListComponent implements OnInit, OnDestroy {
     this.alunoService.findAll()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (data) => {
-          this.alunos = data;
-          this.loading = false;
-        },
+        next: (data) => { this.alunos = data; this.loading = false; },
         error: () => { this.loading = false; }
       });
   }
 
-  abrirNovo(): void {
-    this.alunoSelecionadoId = null;
-    this.modalAtivo = 'form';
-  }
-
-  abrirEdicao(id: number): void {
-    this.alunoSelecionadoId = id;
-    this.modalAtivo = 'form';
-  }
+  abrirNovo(): void { this.alunoSelecionadoId = null; this.modalAtivo = 'form'; }
+  abrirEdicao(id: number): void { this.alunoSelecionadoId = id; this.modalAtivo = 'form'; }
 
   abrirDetalhe(id: number): void {
-    this.alunoSelecionadoId = id;
-    this.modalAtivo = 'detail';
+    this.dialog.open(AlunoDetailComponent, {
+      data: { alunoId: id } satisfies AlunoDetailData
+    });
   }
 
   abrirBoletim(id: number): void {
-    this.alunoSelecionadoId = id;
-    this.modalAtivo = 'boletim';
+    this.dialog.open(BoletimModalComponent, {
+      data: { alunoId: id } satisfies BoletimDialogData
+    });
   }
 
   abrirFrequencia(id: number): void {
-    this.alunoSelecionadoId = id;
-    this.modalAtivo = 'frequencia';
+    this.dialog.open(FrequenciaModalComponent, {
+      data: { alunoId: id } satisfies FrequenciaDialogData
+    });
   }
 
   fecharModal(): void {
@@ -102,10 +108,15 @@ export class AlunoListComponent implements OnInit, OnDestroy {
   }
 
   excluir(id: number, nome: string): void {
-    if (!confirm(`Excluir o aluno "${nome}"?`)) return;
-    this.alunoService.delete(id)
+    this.confirmDialog
+      .confirmDelete(`Excluir o aluno "${nome}"? Esta ação não pode ser desfeita.`)
       .pipe(takeUntil(this.destroy$))
-      .subscribe();
+      .subscribe(ok => {
+        if (!ok) return;
+        this.alunoService.delete(id)
+          .pipe(takeUntil(this.destroy$))
+          .subscribe(() => this.notification.success('Aluno excluído.'));
+      });
   }
 
   ngOnDestroy(): void {

@@ -1,33 +1,43 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject, finalize, takeUntil } from 'rxjs';
+
+import { MatTableModule } from '@angular/material/table';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 
 import { TurmaResponse } from '../../../../core/models/responses/turma.response';
 import { TurmaService } from '../../services/turma.service';
+import { AuthService } from '../../../../core/services/auth.service';
+import { Role } from '../../../../core/models/enums/role.enum';
+import { ConfirmDialogService } from '../../../../core/services/confirm-dialog.service';
+import { NotificationService } from '../../../../core/services/notification.service';
 import { TurmaFormComponent } from '../turma-form/turma-form.component';
-import { TurmaDetailComponent } from '../turma-detail/turma-detail.component';
+import { TurmaDetailComponent, TurmaDetailData } from '../turma-detail/turma-detail.component';
 
-type ModalAtivo = 'form' | 'detail' | null;
+type ModalAtivo = 'form' | null;
 
 @Component({
   selector: 'app-turma-list',
   standalone: true,
-  imports: [CommonModule, TurmaFormComponent, TurmaDetailComponent],
+  imports: [
+    CommonModule,
+    MatTableModule,
+    MatButtonModule,
+    MatIconModule,
+    MatProgressSpinnerModule,
+    MatTooltipModule,
+    MatDialogModule,
+    TurmaFormComponent
+  ],
   templateUrl: './turma-list.component.html',
   styles: [`
-    .container { padding: 24px; max-width: 1100px; margin: 0 auto; }
-    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-    h1 { margin: 0; }
-    button { padding: 8px 14px; border: none; border-radius: 6px; cursor: pointer; }
-    .btn-primary { background: #2563eb; color: #fff; }
-    .btn-secondary { background: #e5e7eb; color: #111827; }
-    .btn-danger { background: #dc2626; color: #fff; }
-    table { width: 100%; border-collapse: collapse; background: #fff; }
-    th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e5e7eb; }
-    th { background: #f9fafb; font-weight: 600; }
-    .actions { display: flex; gap: 6px; }
-    .actions button { padding: 6px 10px; font-size: 12px; }
-    .empty, .loading { text-align: center; padding: 32px; color: #6b7280; }
+    table { width: 100%; }
+    .actions-cell { display: flex; gap: 4px; justify-content: flex-end; }
+    h1 { margin: 0; font-size: 24px; font-weight: 500; }
   `]
 })
 export class TurmaListComponent implements OnInit, OnDestroy {
@@ -37,56 +47,58 @@ export class TurmaListComponent implements OnInit, OnDestroy {
   modalAtivo: ModalAtivo = null;
   turmaSelecionadaId: number | null = null;
 
+  readonly displayedColumns = ['id', 'nome', 'anoLetivo', 'turno', 'curso', 'acoes'];
+
   private destroy$ = new Subject<void>();
 
-  constructor(private turmaService: TurmaService) {}
+  constructor(
+    private turmaService: TurmaService,
+    private auth: AuthService,
+    private dialog: MatDialog,
+    private confirmDialog: ConfirmDialogService,
+    private notification: NotificationService
+  ) {}
+
+  get isSecretaria(): boolean { return this.auth.hasRole(Role.SECRETARIA); }
 
   ngOnInit(): void {
-    this.carregarTurmas();
+    this.carregar();
     this.turmaService.turmaAtualizada$
       .pipe(takeUntil(this.destroy$))
-      .subscribe(() => this.carregarTurmas());
+      .subscribe(() => this.carregar());
   }
 
-  carregarTurmas(): void {
+  carregar(): void {
     this.loading = true;
     this.turmaService.findAll()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (data) => { this.turmas = data; this.loading = false; },
+        next: d => { this.turmas = d; this.loading = false; },
         error: () => { this.loading = false; }
       });
   }
 
-  abrirNovo(): void {
-    this.turmaSelecionadaId = null;
-    this.modalAtivo = 'form';
-  }
-
-  abrirEdicao(id: number): void {
-    this.turmaSelecionadaId = id;
-    this.modalAtivo = 'form';
-  }
+  abrirNovo(): void { this.turmaSelecionadaId = null; this.modalAtivo = 'form'; }
+  abrirEdicao(id: number): void { this.turmaSelecionadaId = id; this.modalAtivo = 'form'; }
 
   abrirDetalhe(id: number): void {
-    this.turmaSelecionadaId = id;
-    this.modalAtivo = 'detail';
+    this.dialog.open(TurmaDetailComponent, {
+      data: { turmaId: id } satisfies TurmaDetailData
+    });
   }
 
-  fecharModal(): void {
-    this.modalAtivo = null;
-    this.turmaSelecionadaId = null;
-  }
+  fecharModal(): void { this.modalAtivo = null; this.turmaSelecionadaId = null; }
 
   excluir(id: number, nome: string): void {
-    if (!confirm(`Excluir a turma "${nome}"?`)) return;
-    this.turmaService.delete(id)
+    this.confirmDialog.confirmDelete(`Excluir a turma "${nome}"? Esta ação não pode ser desfeita.`)
       .pipe(takeUntil(this.destroy$))
-      .subscribe();
+      .subscribe(ok => {
+        if (!ok) return;
+        this.turmaService.delete(id)
+          .pipe(takeUntil(this.destroy$))
+          .subscribe(() => this.notification.success('Turma excluída.'));
+      });
   }
 
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
-  }
+  ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
 }

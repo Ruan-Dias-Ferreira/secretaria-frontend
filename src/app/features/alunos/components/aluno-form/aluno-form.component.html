@@ -2,71 +2,77 @@
   <div class="modal" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <h2>{{ isEdicao ? 'Editar Aluno' : 'Novo Aluno' }}</h2>
-      <button class="close-btn" (click)="cancelar()">&times;</button>
+      <button mat-icon-button (click)="cancelar()" aria-label="Fechar">
+        <mat-icon>close</mat-icon>
+      </button>
     </div>
 
-    <div *ngIf="errorMsg" class="alert">{{ errorMsg }}</div>
+    <div *ngIf="loading" class="loading-overlay">
+      <mat-spinner diameter="40"></mat-spinner>
+    </div>
 
-    <form [formGroup]="form" (ngSubmit)="onSubmit()" *ngIf="form">
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" *ngIf="form && !loading">
       <div class="form-grid">
-        <div class="full">
-          <label>Nome *</label>
-          <input formControlName="nome" [class.invalid]="campoInvalido('nome')" />
-          <div class="error" *ngIf="campoInvalido('nome')">Nome é obrigatório (mín. 3 caracteres).</div>
-        </div>
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>Nome</mat-label>
+          <input matInput formControlName="nome" />
+          <mat-error *ngIf="form.get('nome')?.hasError('required')">Obrigatório.</mat-error>
+          <mat-error *ngIf="form.get('nome')?.hasError('minlength')">Mínimo 3 caracteres.</mat-error>
+        </mat-form-field>
 
-        <div>
-          <label>CPF *</label>
-          <input formControlName="cpf" [class.invalid]="campoInvalido('cpf')" />
-          <div class="error" *ngIf="campoInvalido('cpf')">CPF é obrigatório.</div>
-        </div>
+        <mat-form-field appearance="outline">
+          <mat-label>CPF</mat-label>
+          <input matInput formControlName="cpf" />
+          <mat-error>Obrigatório.</mat-error>
+        </mat-form-field>
 
-        <div>
-          <label>RG *</label>
-          <input formControlName="rg" [class.invalid]="campoInvalido('rg')" />
-          <div class="error" *ngIf="campoInvalido('rg')">RG é obrigatório.</div>
-        </div>
+        <mat-form-field appearance="outline">
+          <mat-label>RG</mat-label>
+          <input matInput formControlName="rg" />
+          <mat-error>Obrigatório.</mat-error>
+        </mat-form-field>
 
-        <div>
-          <label>Data de Nascimento *</label>
-          <input type="date" formControlName="dataNascimento" [class.invalid]="campoInvalido('dataNascimento')" />
-          <div class="error" *ngIf="campoInvalido('dataNascimento')">Informe a data de nascimento.</div>
-        </div>
+        <mat-form-field appearance="outline">
+          <mat-label>Data de Nascimento</mat-label>
+          <input matInput type="date" formControlName="dataNascimento" />
+          <mat-error>Obrigatório.</mat-error>
+        </mat-form-field>
 
-        <div>
-          <label>Telefone *</label>
-          <input formControlName="telefone" [class.invalid]="campoInvalido('telefone')" />
-          <div class="error" *ngIf="campoInvalido('telefone')">Telefone é obrigatório.</div>
-        </div>
+        <mat-form-field appearance="outline">
+          <mat-label>Telefone</mat-label>
+          <input matInput formControlName="telefone" />
+          <mat-error>Obrigatório.</mat-error>
+        </mat-form-field>
 
-        <div class="full">
-          <label>Email *</label>
-          <input type="email" formControlName="email" [class.invalid]="campoInvalido('email')" />
-          <div class="error" *ngIf="campoInvalido('email')">Informe um email válido.</div>
-        </div>
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>Email</mat-label>
+          <input matInput type="email" formControlName="email" />
+          <mat-error *ngIf="form.get('email')?.hasError('required')">Obrigatório.</mat-error>
+          <mat-error *ngIf="form.get('email')?.hasError('email')">Email inválido.</mat-error>
+        </mat-form-field>
 
-        <div class="full">
-          <label>Endereço *</label>
-          <input formControlName="endereco" [class.invalid]="campoInvalido('endereco')" />
-          <div class="error" *ngIf="campoInvalido('endereco')">Endereço é obrigatório.</div>
-        </div>
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>Endereço</mat-label>
+          <input matInput formControlName="endereco" />
+          <mat-error>Obrigatório.</mat-error>
+        </mat-form-field>
 
-        <div>
-          <label>Nome da Mãe *</label>
-          <input formControlName="nomeMae" [class.invalid]="campoInvalido('nomeMae')" />
-          <div class="error" *ngIf="campoInvalido('nomeMae')">Informe o nome da mãe.</div>
-        </div>
+        <mat-form-field appearance="outline">
+          <mat-label>Nome da Mãe</mat-label>
+          <input matInput formControlName="nomeMae" />
+          <mat-error>Obrigatório.</mat-error>
+        </mat-form-field>
 
-        <div>
-          <label>Nome do Pai</label>
-          <input formControlName="nomePai" />
-        </div>
+        <mat-form-field appearance="outline">
+          <mat-label>Nome do Pai</mat-label>
+          <input matInput formControlName="nomePai" />
+        </mat-form-field>
       </div>
 
       <div class="actions">
-        <button type="button" class="btn-secondary" (click)="cancelar()">Cancelar</button>
-        <button type="submit" class="btn-primary" [disabled]="loading">
-          {{ loading ? 'Salvando...' : (isEdicao ? 'Atualizar' : 'Salvar') }}
+        <button type="button" mat-button (click)="cancelar()">Cancelar</button>
+        <button type="submit" mat-flat-button color="primary" [disabled]="loading">
+          {{ isEdicao ? 'Atualizar' : 'Salvar' }}
         </button>
       </div>
     </form>
