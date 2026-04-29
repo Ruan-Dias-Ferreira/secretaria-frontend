@@ -1,0 +1,140 @@
+<div class="page-wrap">
+  <div class="page-title">
+    <div class="title-icon">🔄</div>
+    <span>Rematrícula</span>
+  </div>
+
+  <!-- ── PASSO 1: Definir destino ──────────────────────────────── -->
+  @if (passo() === 1) {
+    <div class="info-card">
+      Defina a turma de destino para <strong>{{ anoDestino }}</strong> antes de selecionar os alunos.
+    </div>
+
+    <div class="section-label">DESTINO — ANO LETIVO {{ anoDestino }}</div>
+    <div class="form-row-3" [formGroup]="destinoForm">
+      <mat-form-field appearance="outline">
+        <mat-label>Série destino</mat-label>
+        <mat-select formControlName="serie">
+          @for (s of series; track s) { <mat-option [value]="s">{{ s }}</mat-option> }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Turma destino</mat-label>
+        <mat-select formControlName="turmaId">
+          @for (t of turmas(); track t.id) { <mat-option [value]="t.id">{{ t.nome }}</mat-option> }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Turno destino</mat-label>
+        <mat-select formControlName="turno">
+          @for (t of turnos; track t) { <mat-option [value]="t">{{ t }}</mat-option> }
+        </mat-select>
+      </mat-form-field>
+    </div>
+    <button mat-flat-button color="primary" (click)="continuar()">Continuar →</button>
+
+    <mat-divider class="my-divider" style="border-style:dashed;margin:24px 0"></mat-divider>
+
+    <div class="section-label">CONSULTAR REMATRICULADOS</div>
+    <div class="form-row-3" [formGroup]="consultaForm">
+      <mat-form-field appearance="outline">
+        <mat-label>Série</mat-label>
+        <mat-select formControlName="serie">
+          @for (s of series; track s) { <mat-option [value]="s">{{ s }}</mat-option> }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Turma</mat-label>
+        <mat-select formControlName="turma">
+          @for (t of turmas(); track t.id) { <mat-option [value]="t.id">{{ t.nome }}</mat-option> }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Turno</mat-label>
+        <mat-select formControlName="turno">
+          @for (t of turnos; track t) { <mat-option [value]="t">{{ t }}</mat-option> }
+        </mat-select>
+      </mat-form-field>
+    </div>
+    <button mat-stroked-button (click)="consultar()">Consultar</button>
+
+    @if (alunosConsulta().length > 0) {
+      <table mat-table [dataSource]="alunosConsulta()" class="result-table mt">
+        <ng-container matColumnDef="aluno">
+          <th mat-header-cell *matHeaderCellDef>Aluno</th>
+          <td mat-cell *matCellDef="let m">Aluno #{{ m.alunoId }}</td>
+        </ng-container>
+        <ng-container matColumnDef="turma">
+          <th mat-header-cell *matHeaderCellDef>Turma atual</th>
+          <td mat-cell *matCellDef="let m">{{ m.turmaId }}</td>
+        </ng-container>
+        <ng-container matColumnDef="situacao">
+          <th mat-header-cell *matHeaderCellDef>Situação {{ anoDestino }}</th>
+          <td mat-cell *matCellDef="let m">
+            <span class="badge badge-yellow">Pendente</span>
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="acao">
+          <th mat-header-cell *matHeaderCellDef>Ação</th>
+          <td mat-cell *matCellDef="let m">
+            <button mat-stroked-button>Editar</button>
+          </td>
+        </ng-container>
+        <tr mat-header-row *matHeaderRowDef="['aluno','turma','situacao','acao']"></tr>
+        <tr mat-row *matRowDef="let row; columns: ['aluno','turma','situacao','acao'];"></tr>
+      </table>
+    }
+  }
+
+  <!-- ── PASSO 2: Selecionar e rematricular ────────────────────── -->
+  @if (passo() === 2) {
+    <div class="destino-banner">
+      <span>Destino {{ anoDestino }}: {{ destinoForm.value.serie }} · Turno {{ destinoForm.value.turno }}</span>
+      <button mat-stroked-button (click)="passo.set(1)">Editar destino</button>
+    </div>
+
+    <div class="form-row-3" [formGroup]="buscaForm">
+      <mat-form-field appearance="outline">
+        <mat-label>Nome do aluno</mat-label>
+        <input matInput formControlName="nome" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Turma atual</mat-label>
+        <mat-select formControlName="turma">
+          @for (t of turmas(); track t.id) { <mat-option [value]="t.id">{{ t.nome }}</mat-option> }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Turno atual</mat-label>
+        <mat-select formControlName="turno">
+          @for (t of turnos; track t) { <mat-option [value]="t">{{ t }}</mat-option> }
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <div class="toolbar-row">
+      <button mat-stroked-button (click)="selecionarTodos()">Selecionar todos</button>
+      <button mat-flat-button color="primary"
+              [disabled]="selecionados().size === 0"
+              (click)="rematricular()">
+        Rematricular selecionados ({{ selecionados().size }})
+      </button>
+      <span class="count-text">{{ alunos().length }} alunos encontrados</span>
+    </div>
+
+    @if (loading()) {
+      <mat-spinner diameter="32"></mat-spinner>
+    }
+
+    @for (a of alunos(); track a.id) {
+      <div class="aluno-row" [class.selected]="isSelecionado(a.id)">
+        <mat-checkbox [checked]="isSelecionado(a.id)" (change)="toggleSelecionado(a.id)"></mat-checkbox>
+        <span class="ar-nome">{{ a.nome }}</span>
+        <span class="ar-cpf">{{ a.cpf }}</span>
+        @if (isSelecionado(a.id)) {
+          <span class="badge badge-yellow">Pendente</span>
+        }
+      </div>
+    }
+  }
+</div>

@@ -1,0 +1,196 @@
+.dashboard {
+  padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  flex: 1;
+}
+
+/* ── Métricas ────────────────────────────────────────────────────── */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+  align-items: stretch;
+}
+
+.metric-card {
+  background: var(--white) !important;
+  border: 2px solid var(--ink) !important;
+  border-radius: var(--r) !important;
+  padding: 0 !important;
+  box-shadow: 3px 3px 0 rgba(0,0,0,.08) !important;
+  position: relative;
+  font-family: var(--sketch-font);
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 3px;
+    border: 1px dashed var(--rule);
+    border-radius: 2px;
+    pointer-events: none;
+  }
+
+  ::ng-deep .mat-mdc-card-content {
+    padding: 16px !important;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+}
+
+.calendar-card {
+  grid-column: span 3;
+  min-width: 0;
+  background: var(--white) !important;
+  border: 2px solid var(--ink) !important;
+  border-radius: var(--r) !important;
+  box-shadow: 3px 3px 0 rgba(0,0,0,.08) !important;
+  position: relative;
+  font-family: var(--sketch-font);
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 3px;
+    border: 1px dashed var(--rule);
+    border-radius: 2px;
+    pointer-events: none;
+  }
+
+  ::ng-deep .mat-mdc-card-content {
+    padding: 12px 16px !important;
+    position: relative;
+    z-index: 1;
+  }
+}
+
+.mc-label {
+  font-size: 14px;
+  color: var(--mid);
+  margin-bottom: 0;
+}
+
+.mc-value {
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--blue);
+}
+
+.mc-sub {
+  font-size: 13px;
+  color: var(--mid);
+}
+
+/* ── Section title ───────────────────────────────────────────────── */
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--ink);
+  border-bottom: 2px solid var(--rule);
+  padding-bottom: 6px;
+  margin-bottom: 16px;
+  font-family: var(--sketch-font);
+
+  mat-icon {
+    color: var(--ink);
+    font-size: 22px;
+    width: 22px;
+    height: 22px;
+  }
+}
+
+/* ── Alertas ─────────────────────────────────────────────────────── */
+.alerts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.alert-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: var(--r);
+  border: 2px solid var(--ink);
+  background: var(--white);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.07);
+  font-size: 16px;
+  transition: transform .12s, box-shadow .12s;
+  font-family: var(--sketch-font);
+}
+
+.alert-err  {
+  background: var(--err-l)  !important;
+  border-color: var(--err)  !important;
+}
+.alert-warn {
+  background: var(--warn-l) !important;
+  border-color: var(--warn) !important;
+}
+
+.clickable {
+  cursor: pointer;
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 3px 4px 0 rgba(0,0,0,.13);
+  }
+}
+
+.alert-icon  {
+  font-size: 20px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.alert-body  {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.alert-title {
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--ink);
+}
+.alert-sub   {
+  font-size: 14px;
+  color: var(--mid);
+}
+
+/* ── Acesso rápido ───────────────────────────────────────────────── */
+.quick-access {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.qa-btn {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  font-family: var(--sketch-font) !important;
+  border: 2px solid var(--ink) !important;
+  border-radius: 20px !important;
+  padding: 6px 16px !important;
+  background: var(--white) !important;
+  color: var(--ink) !important;
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  text-decoration: none !important;
+  transition: background .15s, border-color .15s, color .15s;
+
+  mat-icon { font-size: 18px; width: 18px; height: 18px; }
+
+  &:hover {
+    background: var(--blue-l) !important;
+    border-color: var(--blue) !important;
+    color: var(--blue) !important;
+  }
+}

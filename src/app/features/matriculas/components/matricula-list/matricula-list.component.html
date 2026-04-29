@@ -1,103 +1,111 @@
-<div class="page-container">
-  <div class="page-header">
-    <h1>Matrículas</h1>
-    <button *ngIf="isSecretaria" mat-flat-button color="primary" (click)="abrirNovo()">
-      <mat-icon>add</mat-icon>
-      Nova Matrícula
-    </button>
+<div class="page-wrap">
+
+  <div class="page-title">
+    <div class="title-icon">🔍</div>
+    <span>Consultar Matrículas</span>
   </div>
 
-  <div *ngIf="loading" class="loading-overlay">
-    <mat-spinner diameter="48"></mat-spinner>
+  <!-- Cards de situação -->
+  <div class="stats-row">
+    <div class="stat-card" [class.active]="filtroAtivo() === null" (click)="filtroAtivo.set(null)">
+      <div class="stat-value">{{ stats().total }}</div>
+      <div class="stat-label">Total</div>
+    </div>
+    <div class="stat-card green" [class.active]="filtroAtivo() === StatusMatricula.ATIVO"
+         (click)="toggleFiltro(StatusMatricula.ATIVO)">
+      <div class="stat-value">{{ stats().ativas }}</div>
+      <div class="stat-label">Ativas</div>
+    </div>
+    <div class="stat-card blue" [class.active]="filtroAtivo() === StatusMatricula.TRANSFERIDO"
+         (click)="toggleFiltro(StatusMatricula.TRANSFERIDO)">
+      <div class="stat-value">{{ stats().transferidas }}</div>
+      <div class="stat-label">Transferências</div>
+    </div>
+    <div class="stat-card red" [class.active]="filtroAtivo() === StatusMatricula.DESISTENTE"
+         (click)="toggleFiltro(StatusMatricula.DESISTENTE)">
+      <div class="stat-value">{{ stats().canceladas }}</div>
+      <div class="stat-label">Canceladas</div>
+    </div>
   </div>
 
-  <table mat-table [dataSource]="matriculas" *ngIf="!loading && matriculas.length > 0">
-    <ng-container matColumnDef="id">
-      <th mat-header-cell *matHeaderCellDef>ID</th>
-      <td mat-cell *matCellDef="let m">{{ m.id }}</td>
-    </ng-container>
+  <!-- Barra de busca -->
+  <div class="search-bar">
+    <mat-form-field appearance="outline" class="search-field">
+      <mat-label>Buscar por nome, RA ou CPF…</mat-label>
+      <input matInput [formControl]="searchCtrl" autocomplete="off" />
+      <mat-icon matSuffix>search</mat-icon>
+    </mat-form-field>
+  </div>
 
-    <ng-container matColumnDef="alunoId">
-      <th mat-header-cell *matHeaderCellDef>Aluno (ID)</th>
-      <td mat-cell *matCellDef="let m">#{{ m.alunoId }}</td>
-    </ng-container>
+  @if (loading()) {
+    <div class="loading-center"><mat-spinner diameter="36"></mat-spinner></div>
+  }
 
-    <ng-container matColumnDef="turmaId">
-      <th mat-header-cell *matHeaderCellDef>Turma (ID)</th>
-      <td mat-cell *matCellDef="let m">#{{ m.turmaId }}</td>
-    </ng-container>
+  @if (!loading()) {
+    <!-- Tabela de resultados -->
+    @if (filtradas().length > 0 && !filtroAtivo()) {
+      <div class="result-count">{{ filtradas().length }} registros encontrados</div>
+      <table mat-table [dataSource]="filtradas()" class="result-table">
+        <ng-container matColumnDef="aluno">
+          <th mat-header-cell *matHeaderCellDef>Aluno</th>
+          <td mat-cell *matCellDef="let m">Aluno #{{ m.alunoId }}</td>
+        </ng-container>
+        <ng-container matColumnDef="turma">
+          <th mat-header-cell *matHeaderCellDef>Turma</th>
+          <td mat-cell *matCellDef="let m">{{ m.turmaId }}</td>
+        </ng-container>
+        <ng-container matColumnDef="turno">
+          <th mat-header-cell *matHeaderCellDef>Turno</th>
+          <td mat-cell *matCellDef="let m">—</td>
+        </ng-container>
+        <ng-container matColumnDef="situacao">
+          <th mat-header-cell *matHeaderCellDef>Situação</th>
+          <td mat-cell *matCellDef="let m">
+            <span [class]="badgeClass(m.status)">{{ badgeLabel(m.status) }}</span>
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="ano">
+          <th mat-header-cell *matHeaderCellDef>Ano</th>
+          <td mat-cell *matCellDef="let m">{{ m.anoLetivo }}</td>
+        </ng-container>
+        <ng-container matColumnDef="acoes">
+          <th mat-header-cell *matHeaderCellDef></th>
+          <td mat-cell *matCellDef="let m">
+            <button mat-icon-button><mat-icon>chevron_right</mat-icon></button>
+          </td>
+        </ng-container>
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="clickable-row"></tr>
+      </table>
+    }
 
-    <ng-container matColumnDef="anoLetivo">
-      <th mat-header-cell *matHeaderCellDef>Ano Letivo</th>
-      <td mat-cell *matCellDef="let m">{{ m.anoLetivo }}</td>
-    </ng-container>
-
-    <ng-container matColumnDef="status">
-      <th mat-header-cell *matHeaderCellDef>Status</th>
-      <td mat-cell *matCellDef="let m">
-        <span class="badge" [ngClass]="getBadgeClass(m.status)">{{ m.status }}</span>
-      </td>
-    </ng-container>
-
-    <ng-container matColumnDef="acoes">
-      <th mat-header-cell *matHeaderCellDef style="text-align:right;">Ações</th>
-      <td mat-cell *matCellDef="let m">
-        <div class="actions-cell">
-          <mat-form-field
-            *ngIf="isSecretaria"
-            appearance="outline"
-            class="status-select compact"
-            subscriptSizing="dynamic"
-          >
-            <mat-label>Alterar status</mat-label>
-            <mat-select [value]="m.status" (selectionChange)="alterarStatus(m.id, $event.value)">
-              <mat-option *ngFor="let s of statusOptions" [value]="s">{{ s }}</mat-option>
-            </mat-select>
-          </mat-form-field>
-
-          <button mat-icon-button matTooltip="Detalhes" (click)="abrirDetalhe(m.id)">
-            <mat-icon>info</mat-icon>
-          </button>
-          <button
-            *ngIf="isSecretaria"
-            mat-icon-button
-            color="primary"
-            matTooltip="Editar"
-            (click)="abrirEdicao(m.id)"
-          >
-            <mat-icon>edit</mat-icon>
-          </button>
-          <button
-            *ngIf="isSecretaria"
-            mat-icon-button
-            color="warn"
-            matTooltip="Excluir"
-            (click)="excluir(m.id)"
-          >
-            <mat-icon>delete</mat-icon>
-          </button>
+    <!-- Agrupado por turma (quando filtro ativo) -->
+    @if (filtroAtivo()) {
+      <div class="section-title">
+        Matrículas {{ badgeLabel(filtroAtivo()!) }} — por turma
+      </div>
+      @for (grupo of turmasAgrupadas(); track grupo.turmaId) {
+        <div class="turma-group-card" (click)="toggleExpand(String(grupo.turmaId))">
+          <span>Turma #{{ grupo.turmaId }}</span>
+          <span>{{ grupo.alunos.length }} alunos</span>
+          <mat-icon>{{ isExpanded(String(grupo.turmaId)) ? 'expand_less' : 'expand_more' }}</mat-icon>
         </div>
-      </td>
-    </ng-container>
+        @if (isExpanded(String(grupo.turmaId))) {
+          <div class="turma-alunos">
+            @for (m of grupo.alunos; track m.id) {
+              <div class="turma-aluno-row">
+                <span>Aluno #{{ m.alunoId }}</span>
+                <span [class]="badgeClass(m.status)">{{ badgeLabel(m.status) }}</span>
+                <span>{{ m.anoLetivo }}</span>
+              </div>
+            }
+          </div>
+        }
+      }
+    }
 
-    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-    <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
-  </table>
-
-  <div *ngIf="!loading && matriculas.length === 0" class="empty-state">
-    <mat-icon style="font-size:48px;width:48px;height:48px;">how_to_reg</mat-icon>
-    <p>Nenhuma matrícula cadastrada.</p>
-  </div>
+    @if (filtradas().length === 0) {
+      <div class="empty-state">Nenhuma matrícula encontrada.</div>
+    }
+  }
 </div>
-
-<app-matricula-form
-  *ngIf="modalAtivo === 'form'"
-  [matriculaId]="matriculaSelecionadaId"
-  (close)="fecharModal()">
-</app-matricula-form>
-
-<app-matricula-detail
-  *ngIf="modalAtivo === 'detail' && matriculaSelecionadaId !== null"
-  [matriculaId]="matriculaSelecionadaId"
-  (close)="fecharModal()">
-</app-matricula-detail>

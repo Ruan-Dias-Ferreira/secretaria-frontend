@@ -1,146 +1,188 @@
-import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { forkJoin, Subject, takeUntil } from 'rxjs';
+import {
+  ChangeDetectionStrategy, Component, inject, signal, computed, DestroyRef
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Router } from '@angular/router';
+import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { debounceTime, distinctUntilChanged, switchMap, of, catchError } from 'rxjs';
 
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
+import { MatStepperModule }         from '@angular/material/stepper';
+import { MatButtonModule }          from '@angular/material/button';
+import { MatIconModule }            from '@angular/material/icon';
+import { MatFormFieldModule }       from '@angular/material/form-field';
+import { MatInputModule }           from '@angular/material/input';
+import { MatSelectModule }          from '@angular/material/select';
+import { MatDatepickerModule }      from '@angular/material/datepicker';
+import { MatNativeDateModule }      from '@angular/material/core';
+import { MatCheckboxModule }        from '@angular/material/checkbox';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatChipsModule }           from '@angular/material/chips';
+import { MatDividerModule }         from '@angular/material/divider';
 
-import { MatriculaRequest } from '../../../../core/models/requests/matricula.request';
-import { MatriculaService } from '../../services/matricula.service';
-import { AlunoService } from '../../../alunos/services/aluno.service';
-import { TurmaService } from '../../../turmas/services/turma.service';
-import { AlunoResponse } from '../../../../core/models/responses/aluno.response';
-import { TurmaResponse } from '../../../../core/models/responses/turma.response';
-import { StatusMatricula } from '../../../../core/models/enums/status-matricula.enum';
+import { AlunoService }        from '../../../alunos/services/aluno.service';
+import { TurmaService }        from '../../../turmas/services/turma.service';
+import { MatriculaService }    from '../../services/matricula.service';
 import { NotificationService } from '../../../../core/services/notification.service';
+import { HistoryService }      from '../../../../core/services/history.service';
+
+import { AlunoResponse }   from '../../../../core/models/responses/aluno.response';
+import { TurmaResponse }   from '../../../../core/models/responses/turma.response';
+import { StatusMatricula } from '../../../../core/models/enums/status-matricula.enum';
+
+export const DOCUMENTOS_LIST = [
+  'RG ou Certidão de Nascimento',
+  'Comprovante de Residência',
+  'Histórico Escolar anterior',
+  'Cartão de Vacinação',
+  'Foto 3×4',
+];
 
 @Component({
   selector: 'app-matricula-form',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    CommonModule,
     ReactiveFormsModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatSelectModule,
-    MatButtonModule,
-    MatIconModule,
-    MatProgressSpinnerModule
+    MatStepperModule, MatButtonModule, MatIconModule,
+    MatFormFieldModule, MatInputModule, MatSelectModule,
+    MatDatepickerModule, MatNativeDateModule,
+    MatCheckboxModule, MatProgressSpinnerModule, MatChipsModule, MatDividerModule,
   ],
   templateUrl: './matricula-form.component.html',
-  styles: [`
-    .overlay {
-      position: fixed; inset: 0; background: rgba(0,0,0,.5);
-      display: flex; align-items: center; justify-content: center; z-index: 1000;
-    }
-    .modal {
-      background: var(--mat-sys-surface); border-radius: 12px; padding: 24px;
-      width: 90%; max-width: 560px; max-height: 90vh; overflow-y: auto;
-      box-shadow: var(--mat-sys-level3);
-    }
-    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-    .modal-header h2 { margin: 0; font-size: 20px; font-weight: 500; }
-    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
-    .form-grid .full { grid-column: 1 / -1; }
-    .actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
-    .loading-inline { display: inline-flex; align-items: center; gap: 8px; }
-    mat-form-field { width: 100%; }
-  `]
+  styleUrl: './matricula-form.component.scss',
 })
-export class MatriculaFormComponent implements OnInit, OnDestroy {
+export class MatriculaFormComponent {
+  private readonly fb           = inject(NonNullableFormBuilder);
+  private readonly alunoSvc     = inject(AlunoService);
+  private readonly turmaSvc     = inject(TurmaService);
+  private readonly matriculaSvc = inject(MatriculaService);
+  private readonly notification = inject(NotificationService);
+  private readonly history      = inject(HistoryService);
+  private readonly router       = inject(Router);
+  private readonly destroyRef   = inject(DestroyRef);
 
-  @Input() matriculaId: number | null = null;
-  @Output() close = new EventEmitter<void>();
+  protected readonly anoLetivo  = new Date().getFullYear();
+  protected readonly documentos = DOCUMENTOS_LIST;
+  protected readonly turnos     = ['Manhã', 'Tarde', 'Noite'];
+  protected readonly series     = ['1º Ano', '2º Ano', '3º Ano'];
+  protected readonly situacoes  = [
+    { value: StatusMatricula.ATIVO,      label: 'Ativa' },
+    { value: StatusMatricula.DESISTENTE, label: 'Aguardando documentação' },
+  ];
 
-  form!: FormGroup;
-  loading = false;
+  protected readonly busca           = this.fb.control('');
+  protected readonly buscaResults    = signal<AlunoResponse[]>([]);
+  protected readonly searching       = signal(false);
+  protected readonly showDropdown    = signal(false);
+  protected readonly alunoSelecionado = signal<AlunoResponse | null>(null);
+  protected readonly success         = signal(false);
+  protected readonly submitting      = signal(false);
+  protected readonly turmas          = signal<TurmaResponse[]>([]);
+  protected readonly turmasFiltradas = signal<TurmaResponse[]>([]);
 
-  alunos: AlunoResponse[] = [];
-  turmas: TurmaResponse[] = [];
-  readonly statusOptions = Object.values(StatusMatricula);
+  protected readonly docChecks = signal<Record<string, boolean>>(
+    Object.fromEntries(DOCUMENTOS_LIST.map(d => [d, false]))
+  );
 
-  private destroy$ = new Subject<void>();
+  protected readonly step2Form = this.fb.group({
+    dataMatricula: [new Date() as Date, Validators.required],
+    serie:         ['', Validators.required],
+    turmaId:       [0 as number, Validators.required],
+    turno:         ['', Validators.required],
+    situacao:      [StatusMatricula.ATIVO, Validators.required],
+  });
 
-  constructor(
-    private fb: FormBuilder,
-    private matriculaService: MatriculaService,
-    private alunoService: AlunoService,
-    private turmaService: TurmaService,
-    private notification: NotificationService
-  ) {}
+  protected readonly step3Form = this.fb.group({
+    observacoes: [''],
+  });
 
-  ngOnInit(): void {
-    const anoAtual = new Date().getFullYear();
-    this.form = this.fb.group({
-      alunoId:   [null, [Validators.required]],
-      turmaId:   [null, [Validators.required]],
-      anoLetivo: [anoAtual, [Validators.required, Validators.min(2000), Validators.max(2100)]],
-      status:    [StatusMatricula.ATIVO, [Validators.required]]
+  protected readonly step4Confirm = this.fb.control(false);
+
+  protected readonly successAluno = signal<AlunoResponse | null>(null);
+
+  constructor() {
+    this.turmaSvc.findAll().pipe(takeUntilDestroyed(this.destroyRef)).subscribe(t => {
+      this.turmas.set(t);
+      this.turmasFiltradas.set(t);
     });
 
-    this.carregarDropdowns();
+    this.busca.valueChanges.pipe(
+      debounceTime(350),
+      distinctUntilChanged(),
+      switchMap(q => {
+        if (!q || q.length < 2) {
+          this.buscaResults.set([]); this.showDropdown.set(false); return of([]);
+        }
+        this.searching.set(true);
+        return this.alunoSvc.search(q).pipe(catchError(() => of([])));
+      }),
+      takeUntilDestroyed(this.destroyRef),
+    ).subscribe(r => {
+      this.buscaResults.set(r as AlunoResponse[]);
+      this.showDropdown.set((r as AlunoResponse[]).length > 0);
+      this.searching.set(false);
+    });
+
+    this.step2Form.controls.serie.valueChanges.pipe(
+      takeUntilDestroyed(this.destroyRef),
+    ).subscribe(serie => {
+      const all = this.turmas();
+      const f = all.filter(t => !serie || t.curso?.includes(serie) || t.nome?.includes(serie));
+      this.turmasFiltradas.set(f.length ? f : all);
+      this.step2Form.controls.turmaId.reset(0);
+    });
   }
 
-  get isEdicao(): boolean { return this.matriculaId !== null; }
-
-  private carregarDropdowns(): void {
-    this.loading = true;
-    forkJoin({
-      alunos: this.alunoService.findAll(),
-      turmas: this.turmaService.findAll()
-    })
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: ({ alunos, turmas }) => {
-          this.alunos = alunos;
-          this.turmas = turmas;
-          if (this.matriculaId !== null) {
-            this.carregarMatricula(this.matriculaId);
-          } else {
-            this.loading = false;
-          }
-        },
-        error: () => { this.loading = false; }
-      });
+  protected selecionarAluno(a: AlunoResponse): void {
+    this.alunoSelecionado.set(a);
+    this.showDropdown.set(false);
+    this.busca.setValue(a.nome, { emitEvent: false });
   }
 
-  private carregarMatricula(id: number): void {
-    this.matriculaService.findById(id)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: m => { this.form.patchValue(m); this.loading = false; },
-        error: () => { this.loading = false; }
-      });
+  protected trocarAluno(): void {
+    this.alunoSelecionado.set(null);
+    this.busca.reset();
   }
 
-  onSubmit(): void {
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      return;
+  protected toggleDoc(doc: string): void {
+    this.docChecks.update(m => ({ ...m, [doc]: !m[doc] }));
+  }
+
+  protected isDocChecked(doc: string): boolean {
+    return this.docChecks()[doc] ?? false;
+  }
+
+  protected salvarMatricula(): void {
+    if (!this.alunoSelecionado() || this.step2Form.invalid || !this.step4Confirm.value) {
+      this.step2Form.markAllAsTouched(); return;
     }
-    this.loading = true;
-    const request = this.form.value as MatriculaRequest;
-
-    const op$ = this.isEdicao && this.matriculaId !== null
-      ? this.matriculaService.update(this.matriculaId, request)
-      : this.matriculaService.save(request);
-
-    op$.pipe(takeUntil(this.destroy$)).subscribe({
+    this.submitting.set(true);
+    const v = this.step2Form.getRawValue();
+    this.matriculaSvc.save({
+      alunoId: this.alunoSelecionado()!.id,
+      turmaId: v.turmaId,
+      anoLetivo: this.anoLetivo,
+      status: v.situacao,
+    }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
-        this.loading = false;
-        this.notification.success(this.isEdicao ? 'Matrícula atualizada.' : 'Matrícula cadastrada.');
-        this.close.emit();
+        this.submitting.set(false);
+        this.successAluno.set(this.alunoSelecionado());
+        this.success.set(true);
+        this.history.add(`Matrícula — ${this.alunoSelecionado()!.nome}`, '/matriculas/nova');
       },
-      error: () => { this.loading = false; }
+      error: () => { this.submitting.set(false); },
     });
   }
 
-  cancelar(): void { this.close.emit(); }
+  protected novaMatricula(): void {
+    this.success.set(false);
+    this.alunoSelecionado.set(null);
+    this.busca.reset();
+    this.step2Form.reset({ dataMatricula: new Date(), situacao: StatusMatricula.ATIVO });
+    this.docChecks.set(Object.fromEntries(DOCUMENTOS_LIST.map(d => [d, false])));
+    this.step4Confirm.reset(false);
+  }
 
-  ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
+  protected cancelar(): void { this.router.navigateByUrl('/dashboard'); }
+  protected goConsultar(): void { this.router.navigateByUrl('/matriculas/consultar'); }
 }

@@ -1,132 +1,133 @@
-import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit } from '@angular/core';
-import { Subject, finalize, takeUntil } from 'rxjs';
+import {
+  ChangeDetectionStrategy, Component, inject, signal, computed, DestroyRef, OnInit
+} from '@angular/core';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, RouterLink } from '@angular/router';
+import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { debounceTime, distinctUntilChanged, switchMap, of, catchError } from 'rxjs';
 
-import { MatTableModule } from '@angular/material/table';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
+import { MatTableModule }           from '@angular/material/table';
+import { MatButtonModule }          from '@angular/material/button';
+import { MatIconModule }            from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatTooltipModule } from '@angular/material/tooltip';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatSelectModule } from '@angular/material/select';
-import { MatChipsModule } from '@angular/material/chips';
+import { MatFormFieldModule }       from '@angular/material/form-field';
+import { MatInputModule }           from '@angular/material/input';
+import { MatChipsModule }           from '@angular/material/chips';
+import { MatDividerModule }         from '@angular/material/divider';
 
-import { MatriculaResponse } from '../../../../core/models/responses/matricula.response';
-import { MatriculaService } from '../../services/matricula.service';
+import { MatriculaService, MatriculaStatsResponse } from '../../services/matricula.service';
 import { ConfirmDialogService } from '../../../../core/services/confirm-dialog.service';
-import { NotificationService } from '../../../../core/services/notification.service';
-import { AuthService } from '../../../../core/services/auth.service';
-import { Role } from '../../../../core/models/enums/role.enum';
-import { MatriculaFormComponent } from '../matricula-form/matricula-form.component';
-import { MatriculaDetailComponent } from '../matricula-detail/matricula-detail.component';
-import { StatusMatricula } from '../../../../core/models/enums/status-matricula.enum';
-import { MatriculaStatusRequest } from '../../../../core/models/requests/matricula-status.request';
-
-type ModalAtivo = 'form' | 'detail' | null;
+import { NotificationService }  from '../../../../core/services/notification.service';
+import { MatriculaResponse }    from '../../../../core/models/responses/matricula.response';
+import { StatusMatricula }      from '../../../../core/models/enums/status-matricula.enum';
 
 @Component({
   selector: 'app-matricula-list',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    CommonModule,
-    MatTableModule,
-    MatButtonModule,
-    MatIconModule,
-    MatProgressSpinnerModule,
-    MatTooltipModule,
-    MatFormFieldModule,
-    MatSelectModule,
-    MatChipsModule,
-    MatriculaFormComponent,
-    MatriculaDetailComponent
+    RouterLink, ReactiveFormsModule,
+    MatTableModule, MatButtonModule, MatIconModule, MatProgressSpinnerModule,
+    MatFormFieldModule, MatInputModule, MatChipsModule, MatDividerModule,
   ],
   templateUrl: './matricula-list.component.html',
-  styles: [`
-    table { width: 100%; }
-    .actions-cell { display: flex; gap: 4px; align-items: center; justify-content: flex-end; }
-    h1 { margin: 0; font-size: 24px; font-weight: 500; }
-    .status-select { width: 140px; }
-    .status-select.compact ::ng-deep .mat-mdc-form-field-subscript-wrapper { display: none; }
-    .badge {
-      display: inline-block; padding: 4px 10px; border-radius: 12px;
-      font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .3px;
-    }
-    .badge-ativo { background: #d1fae5; color: #065f46; }
-    .badge-desistente { background: #fee2e2; color: #991b1b; }
-    .badge-transferido { background: #fef3c7; color: #92400e; }
-    .badge-concluida { background: #dbeafe; color: #1e40af; }
-  `]
+  styleUrl: './matricula-list.component.scss',
 })
-export class MatriculaListComponent implements OnInit, OnDestroy {
+export class MatriculaListComponent implements OnInit {
+  private readonly svc          = inject(MatriculaService);
+  private readonly confirmSvc   = inject(ConfirmDialogService);
+  private readonly notification = inject(NotificationService);
+  private readonly fb           = inject(NonNullableFormBuilder);
+  private readonly destroyRef   = inject(DestroyRef);
+  private readonly route        = inject(ActivatedRoute);
 
-  matriculas: MatriculaResponse[] = [];
-  loading = false;
-  modalAtivo: ModalAtivo = null;
-  matriculaSelecionadaId: number | null = null;
+  protected readonly loading     = signal(false);
+  protected readonly matriculas  = signal<MatriculaResponse[]>([]);
+  protected readonly stats       = signal<MatriculaStatsResponse>({ total: 0, ativas: 0, transferidas: 0, canceladas: 0 });
+  protected readonly filtroAtivo = signal<StatusMatricula | null>(null);
+  protected readonly searchCtrl  = this.fb.control('');
+  protected readonly expanded    = signal<Set<string>>(new Set());
 
-  readonly displayedColumns = ['id', 'alunoId', 'turmaId', 'anoLetivo', 'status', 'acoes'];
-  readonly statusOptions = Object.values(StatusMatricula);
+  protected readonly displayedColumns = ['aluno', 'turma', 'turno', 'situacao', 'ano', 'acoes'];
+  protected readonly StatusMatricula  = StatusMatricula;
+  protected readonly String = String;
 
-  private destroy$ = new Subject<void>();
+  protected readonly filtradas = computed(() => {
+    const status = this.filtroAtivo();
+    if (!status) return this.matriculas();
+    return this.matriculas().filter(m => m.status === status);
+  });
 
-  constructor(
-    private matriculaService: MatriculaService,
-    private auth: AuthService,
-    private confirmDialog: ConfirmDialogService,
-    private notification: NotificationService
-  ) {}
-
-  get isSecretaria(): boolean { return this.auth.hasRole(Role.SECRETARIA); }
+  protected readonly turmasAgrupadas = computed(() => {
+    const map = new Map<number, MatriculaResponse[]>();
+    this.filtradas().forEach(m => {
+      if (!map.has(m.turmaId)) map.set(m.turmaId, []);
+      map.get(m.turmaId)!.push(m);
+    });
+    return Array.from(map.entries()).map(([turmaId, alunos]) => ({ turmaId, alunos }));
+  });
 
   ngOnInit(): void {
-    this.carregar();
-    this.matriculaService.matriculaAtualizada$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(() => this.carregar());
+    this.carregarStats();
+    this.carregarTodos();
+
+    this.searchCtrl.valueChanges.pipe(
+      debounceTime(400), distinctUntilChanged(),
+      switchMap(q => {
+        if (!q) { this.carregarTodos(); return of(null); }
+        this.loading.set(true);
+        return this.svc.search(q).pipe(catchError(() => of([])));
+      }),
+      takeUntilDestroyed(this.destroyRef),
+    ).subscribe(r => {
+      if (r !== null) { this.matriculas.set(r as MatriculaResponse[]); this.loading.set(false); }
+    });
+
+    this.route.queryParams.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(p => {
+      if (p['situacao']) this.filtroAtivo.set(p['situacao'] as StatusMatricula);
+    });
   }
 
-  carregar(): void {
-    this.loading = true;
-    this.matriculaService.findAll()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: d => { this.matriculas = d; this.loading = false; },
-        error: () => { this.loading = false; }
-      });
+  private carregarTodos(): void {
+    this.loading.set(true);
+    this.svc.findAll().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: d => { this.matriculas.set(d); this.loading.set(false); },
+      error: () => this.loading.set(false),
+    });
   }
 
-  abrirNovo(): void { this.matriculaSelecionadaId = null; this.modalAtivo = 'form'; }
-  abrirEdicao(id: number): void { this.matriculaSelecionadaId = id; this.modalAtivo = 'form'; }
-  abrirDetalhe(id: number): void { this.matriculaSelecionadaId = id; this.modalAtivo = 'detail'; }
-  fecharModal(): void { this.modalAtivo = null; this.matriculaSelecionadaId = null; }
-
-  alterarStatus(id: number, novoStatus: StatusMatricula): void {
-    const request: MatriculaStatusRequest = { status: novoStatus };
-    this.matriculaService.updateStatus(id, request)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(() => this.notification.success('Status atualizado.'));
+  private carregarStats(): void {
+    this.svc.getStats().pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({ next: s => this.stats.set(s), error: () => {} });
   }
 
-  excluir(id: number): void {
-    this.confirmDialog.confirmDelete('Excluir esta matrícula? Esta ação não pode ser desfeita.')
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(ok => {
-        if (!ok) return;
-        this.matriculaService.delete(id)
-          .pipe(takeUntil(this.destroy$))
-          .subscribe(() => this.notification.success('Matrícula excluída.'));
-      });
+  protected toggleFiltro(status: StatusMatricula): void {
+    this.filtroAtivo.update(v => v === status ? null : status);
   }
 
-  getBadgeClass(status: StatusMatricula): string {
-    const map: Record<StatusMatricula, string> = {
-      [StatusMatricula.ATIVO]: 'badge-ativo',
-      [StatusMatricula.DESISTENTE]: 'badge-desistente',
-      [StatusMatricula.TRANSFERIDO]: 'badge-transferido',
-      [StatusMatricula.CONCLUIDA]: 'badge-concluida'
+  protected toggleExpand(key: string): void {
+    this.expanded.update(s => { const n = new Set(s); n.has(key) ? n.delete(key) : n.add(key); return n; });
+  }
+
+  protected isExpanded(key: string): boolean { return this.expanded().has(key); }
+
+  protected badgeClass(status: StatusMatricula): string {
+    const m: Record<StatusMatricula, string> = {
+      [StatusMatricula.ATIVO]:      'badge badge-green',
+      [StatusMatricula.TRANSFERIDO]:'badge badge-yellow',
+      [StatusMatricula.DESISTENTE]: 'badge badge-red',
+      [StatusMatricula.CONCLUIDA]:  'badge badge-blue',
     };
-    return map[status] || '';
+    return m[status] ?? 'badge';
   }
 
-  ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
+  protected badgeLabel(status: StatusMatricula): string {
+    const m: Record<StatusMatricula, string> = {
+      [StatusMatricula.ATIVO]:      'Ativa',
+      [StatusMatricula.TRANSFERIDO]:'Transferida',
+      [StatusMatricula.DESISTENTE]: 'Cancelada',
+      [StatusMatricula.CONCLUIDA]:  'Concluída',
+    };
+    return m[status] ?? status;
+  }
 }

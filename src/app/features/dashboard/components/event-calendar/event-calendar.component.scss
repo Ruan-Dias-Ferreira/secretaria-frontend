@@ -1,0 +1,90 @@
+.calendar {
+  width: 100%;
+  user-select: none;
+  font-family: var(--sketch-font);
+}
+
+.cal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+
+.cal-month-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.cal-nav {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 0 6px;
+  color: var(--ink);
+  opacity: .5;
+  user-select: none;
+  border-radius: 50%;
+  transition: opacity .12s, background .12s;
+
+  &:hover { opacity: 1; background: var(--blue-l); }
+}
+
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  text-align: center;
+}
+
+.cal-day-name {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--mid);
+  padding: 2px 0;
+}
+
+.cal-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 1px;
+  border-radius: 3px;
+  cursor: pointer;
+  position: relative;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--ink);
+  transition: background .12s, color .12s;
+
+  &.empty { cursor: default; }
+  &:not(.empty):hover { background: var(--blue-l); color: var(--blue); }
+
+  &.today {
+    background: var(--blue) !important;
+    border-radius: 3px;
+    .cal-day-num { color: #fff; font-weight: 700; }
+  }
+}
+
+.cal-day-num {
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.event-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--warn);
+  position: absolute;
+  bottom: 1px;
+  left: 50%;
+  transform: translateX(-50%);
+}

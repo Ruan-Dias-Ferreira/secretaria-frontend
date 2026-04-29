@@ -1,0 +1,73 @@
+.page-wrap { padding: 24px 28px; max-width: 1000px; display: flex; flex-direction: column; gap: 16px; }
+
+.page-title {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 24px; font-weight: 700;
+}
+.title-icon {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--app-info-l); border: 1px solid var(--app-rule);
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* Stats */
+.stats-row { display: flex; gap: 12px; flex-wrap: wrap; }
+
+.stat-card {
+  flex: 1; min-width: 120px;
+  border: 1.5px solid var(--app-rule);
+  border-radius: 8px; padding: 16px 12px;
+  display: flex; flex-direction: column; align-items: center;
+  cursor: pointer; transition: box-shadow .15s;
+  background: var(--mat-sys-surface);
+
+  &:hover { box-shadow: 0 2px 8px rgba(0,0,0,.1); }
+  &.active { box-shadow: 0 0 0 2px var(--mat-sys-primary); }
+}
+
+.stat-card.green .stat-value { color: var(--app-success); }
+.stat-card.blue  .stat-value { color: var(--app-info); }
+.stat-card.red   .stat-value { color: var(--app-err); }
+
+.stat-value { font-size: 28px; font-weight: 700; }
+.stat-label { font-size: 13px; color: var(--mat-sys-on-surface-variant); }
+
+/* Search */
+.search-bar { display: flex; gap: 10px; }
+.search-field { flex: 1; }
+
+/* Loading */
+.loading-center { display: flex; justify-content: center; padding: 32px; }
+
+/* Table */
+.result-count { font-size: 14px; color: var(--mat-sys-on-surface-variant); }
+.result-table { width: 100%; }
+.clickable-row { cursor: pointer; &:hover { background: var(--app-paper); } }
+
+/* Section title */
+.section-title {
+  font-size: 16px; font-weight: 600;
+  border-bottom: 1px solid var(--app-rule); padding-bottom: 8px;
+}
+
+/* Turma groups */
+.turma-group-card {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 16px; border: 1px solid var(--app-rule);
+  border-radius: 6px; cursor: pointer; background: var(--mat-sys-surface);
+  transition: background .12s;
+  &:hover { background: var(--app-paper); }
+}
+
+.turma-alunos { border: 1px solid var(--app-rule); border-top: none; border-radius: 0 0 6px 6px; }
+
+.turma-aluno-row {
+  display: flex; align-items: center; gap: 16px;
+  padding: 10px 16px; border-bottom: 1px solid var(--app-rule);
+  font-size: 14px;
+  &:last-child { border-bottom: none; }
+}
+
+.empty-state {
+  text-align: center; padding: 40px; color: var(--mat-sys-on-surface-variant);
+}

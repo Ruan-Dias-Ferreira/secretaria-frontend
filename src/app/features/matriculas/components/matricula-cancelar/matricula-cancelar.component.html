@@ -1,0 +1,67 @@
+<div class="page-wrap">
+  <div class="page-title"><div class="title-icon danger-icon">❌</div><span>Cancelar Matrícula</span></div>
+
+  <div class="alert-danger">
+    ⚠️ O cancelamento é irreversível. Busque o aluno, confirme os dados e informe o motivo antes de prosseguir.
+  </div>
+
+  <div class="section-label">ETAPA 1 — LOCALIZAR ALUNO</div>
+  @if (!alunoSelecionado()) {
+    <div class="busca-wrapper">
+      <mat-form-field appearance="outline" class="busca-field">
+        <mat-label>Buscar por Nome, RA ou CPF</mat-label>
+        <input matInput [formControl]="busca" autocomplete="off" />
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+      @if (showDropdown() && buscaResults().length) {
+        <div class="busca-dropdown">
+          @for (a of buscaResults(); track a.id) {
+            <div class="busca-item" (click)="selecionarAluno(a)">
+              <span class="bi-nome">{{ a.nome }}</span>
+              <span class="bi-sub">CPF: {{ a.cpf }}</span>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+  @if (alunoSelecionado()) {
+    <div class="aluno-card-danger">
+      <div class="ac-header">
+        <span class="ac-nome">{{ alunoSelecionado()!.nome }}</span>
+        <span class="badge badge-red">Selecionado</span>
+      </div>
+      <div class="ac-info">CPF: {{ alunoSelecionado()!.cpf }}</div>
+      <button mat-stroked-button (click)="alunoSelecionado.set(null); busca.reset()">Trocar</button>
+    </div>
+  }
+
+  <div class="section-label">ETAPA 2 — MOTIVO DO CANCELAMENTO</div>
+  <div [formGroup]="form" class="form-col">
+    <div class="form-row-2">
+      <mat-form-field appearance="outline">
+        <mat-label>Motivo</mat-label>
+        <mat-select formControlName="motivo">
+          @for (m of motivos; track m) { <mat-option [value]="m">{{ m }}</mat-option> }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Data do cancelamento</mat-label>
+        <input matInput [matDatepicker]="dp" formControlName="dataCancelamento" />
+        <mat-datepicker-toggle matSuffix [for]="dp"></mat-datepicker-toggle>
+        <mat-datepicker #dp></mat-datepicker>
+      </mat-form-field>
+    </div>
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Observações</mat-label>
+      <textarea matInput formControlName="observacoes" rows="3" style="resize:vertical"></textarea>
+    </mat-form-field>
+  </div>
+
+  <div class="actions">
+    <button class="btn-danger" [disabled]="submitting()" (click)="cancelarMatricula()">
+      @if (submitting()) { <mat-spinner diameter="18"></mat-spinner> } @else { Cancelar Matrícula }
+    </button>
+    <button mat-stroked-button (click)="limpar()">Cancelar</button>
+  </div>
+</div>

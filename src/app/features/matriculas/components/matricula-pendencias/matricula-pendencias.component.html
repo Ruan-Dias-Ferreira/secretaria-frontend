@@ -1,0 +1,27 @@
+<div class="page-wrap">
+  <div class="page-title"><div class="title-icon">⏳</div><span>Pendências de Atualização</span></div>
+
+  @if (loading()) {
+    <div class="loading">Carregando…</div>
+  } @else if (pendencias().length === 0) {
+    <div class="empty-state">✅ Nenhuma pendência de atualização de dados.</div>
+  } @else {
+    <div class="alert-warn">
+      ⚠️ {{ pendencias().length }} aluno(s) com dados pendentes de atualização.
+    </div>
+
+    @for (grupo of agrupadas(); track grupo.turmaId) {
+      <div class="grupo-titulo">Turma #{{ grupo.turmaId }}</div>
+      <div class="grupo-tabela">
+        @for (m of grupo.alunos; track m.id) {
+          <div class="pendencia-row">
+            <span class="pr-nome">Aluno #{{ m.alunoId }}</span>
+            <span class="badge badge-yellow">Pendente</span>
+            <span class="pr-ano">{{ m.anoLetivo }}</span>
+            <button mat-stroked-button (click)="atualizar(m.id)">Atualizar dados</button>
+          </div>
+        }
+      </div>
+    }
+  }
+</div>

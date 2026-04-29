@@ -1,58 +1,219 @@
-<div class="overlay" (click)="cancelar()">
-  <div class="modal" (click)="$event.stopPropagation()">
-    <div class="modal-header">
-      <h2>{{ isEdicao ? 'Editar Matrícula' : 'Nova Matrícula' }}</h2>
-      <button mat-icon-button (click)="cancelar()" aria-label="Fechar">
-        <mat-icon>close</mat-icon>
-      </button>
+<div class="page-wrap">
+
+  <!-- ─── Tela de sucesso ─────────────────────────────────────── -->
+  @if (success()) {
+    <div class="success-screen">
+      <div class="success-emoji">✅</div>
+      <h2>Matrícula registrada com sucesso!</h2>
+      <p>{{ successAluno()?.nome }} — matriculado(a) para {{ anoLetivo }}.</p>
+      <div class="success-actions">
+        <button mat-flat-button color="primary" (click)="novaMatricula()">Nova Matrícula</button>
+        <button mat-stroked-button (click)="goConsultar()">Buscar Matrículas</button>
+      </div>
+    </div>
+  }
+
+  <!-- ─── Wizard ──────────────────────────────────────────────── -->
+  @if (!success()) {
+    <div class="page-title">
+      <div class="title-icon">📋</div>
+      <span>Nova Matrícula</span>
     </div>
 
-    <form [formGroup]="form" (ngSubmit)="onSubmit()" *ngIf="form">
-      <div class="form-grid">
-        <mat-form-field appearance="outline" class="full">
-          <mat-label>Aluno</mat-label>
-          <mat-select formControlName="alunoId">
-            <mat-option *ngFor="let a of alunos" [value]="a.id">
-              {{ a.nome }} ({{ a.cpf }})
-            </mat-option>
-          </mat-select>
-          <mat-error *ngIf="form.get('alunoId')?.hasError('required')">Selecione um aluno.</mat-error>
-        </mat-form-field>
+    <mat-stepper linear #stepper orientation="horizontal" class="wizard">
 
-        <mat-form-field appearance="outline" class="full">
-          <mat-label>Turma</mat-label>
-          <mat-select formControlName="turmaId">
-            <mat-option *ngFor="let t of turmas" [value]="t.id">
-              {{ t.nome }} — {{ t.anoLetivo }}
-            </mat-option>
-          </mat-select>
-          <mat-error *ngIf="form.get('turmaId')?.hasError('required')">Selecione uma turma.</mat-error>
-        </mat-form-field>
+      <!-- ══ ETAPA 1 — Identificar Aluno ══ -->
+      <mat-step label="Identificar Aluno" [completed]="!!alunoSelecionado()">
+        <div class="step-content">
+          <div class="section-label">IDENTIFICAÇÃO DO ALUNO</div>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Ano Letivo</mat-label>
-          <input matInput type="number" formControlName="anoLetivo" />
-          <mat-error *ngIf="form.get('anoLetivo')?.invalid">Informe um ano válido.</mat-error>
-        </mat-form-field>
+          @if (!alunoSelecionado()) {
+            <div class="busca-wrapper">
+              <mat-form-field appearance="outline" class="busca-field">
+                <mat-label>Buscar por Nome ou CPF</mat-label>
+                <input matInput [formControl]="busca" autocomplete="off" />
+                <mat-icon matSuffix>search</mat-icon>
+              </mat-form-field>
+              @if (searching()) {
+                <div class="busca-searching">
+                  <mat-spinner diameter="20"></mat-spinner> Buscando…
+                </div>
+              }
+              @if (showDropdown() && buscaResults().length) {
+                <div class="busca-dropdown">
+                  @for (a of buscaResults(); track a.id) {
+                    <div class="busca-item" (click)="selecionarAluno(a)">
+                      <span class="bi-nome">{{ a.nome }}</span>
+                      <span class="bi-sub">CPF: {{ a.cpf }}</span>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
 
-        <mat-form-field appearance="outline">
-          <mat-label>Status</mat-label>
-          <mat-select formControlName="status">
-            <mat-option *ngFor="let s of statusOptions" [value]="s">{{ s }}</mat-option>
-          </mat-select>
-          <mat-error *ngIf="form.get('status')?.hasError('required')">Selecione um status.</mat-error>
-        </mat-form-field>
-      </div>
+          @if (alunoSelecionado()) {
+            <div class="aluno-card">
+              <div class="ac-header">
+                <span class="ac-nome">{{ alunoSelecionado()!.nome }}</span>
+                <span class="badge badge-green">Selecionado</span>
+              </div>
+              <div class="ac-info">CPF: {{ alunoSelecionado()!.cpf }} | Email: {{ alunoSelecionado()!.email }}</div>
+              <button mat-stroked-button class="trocar-btn" (click)="trocarAluno()">Trocar aluno</button>
+            </div>
+          }
 
-      <div class="actions">
-        <button type="button" mat-button (click)="cancelar()">Cancelar</button>
-        <button type="submit" mat-flat-button color="primary" [disabled]="loading">
-          <span *ngIf="!loading">{{ isEdicao ? 'Atualizar' : 'Salvar' }}</span>
-          <span *ngIf="loading" class="loading-inline">
-            <mat-spinner diameter="18"></mat-spinner> Salvando...
-          </span>
-        </button>
-      </div>
-    </form>
-  </div>
+          <div class="step-actions">
+            <button mat-flat-button color="primary" matStepperNext [disabled]="!alunoSelecionado()">
+              Avançar →
+            </button>
+            <button mat-stroked-button (click)="cancelar()">Cancelar</button>
+          </div>
+        </div>
+      </mat-step>
+
+      <!-- ══ ETAPA 2 — Dados da Matrícula ══ -->
+      <mat-step label="Dados da Matrícula" [stepControl]="step2Form">
+        <div class="step-content">
+          <div class="section-label">PERÍODO LETIVO</div>
+          <div class="form-row-3">
+            <mat-form-field appearance="outline">
+              <mat-label>Ano Letivo</mat-label>
+              <input matInput [value]="anoLetivo" readonly />
+              <mat-icon matSuffix>lock</mat-icon>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Semestre</mat-label>
+              <input matInput value="1º Semestre" readonly />
+              <mat-icon matSuffix>lock</mat-icon>
+            </mat-form-field>
+            <mat-form-field appearance="outline" [formGroup]="step2Form">
+              <mat-label>Data da Matrícula</mat-label>
+              <input matInput [matDatepicker]="picker" formControlName="dataMatricula" />
+              <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+              <mat-datepicker #picker></mat-datepicker>
+            </mat-form-field>
+          </div>
+
+          <div class="section-label mt">TURMA</div>
+          <div class="form-row-4" [formGroup]="step2Form">
+            <mat-form-field appearance="outline">
+              <mat-label>Série / Ano</mat-label>
+              <mat-select formControlName="serie">
+                @for (s of series; track s) {
+                  <mat-option [value]="s">{{ s }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Turma</mat-label>
+              <mat-select formControlName="turmaId">
+                @for (t of turmasFiltradas(); track t.id) {
+                  <mat-option [value]="t.id">{{ t.nome }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Turno</mat-label>
+              <mat-select formControlName="turno">
+                @for (t of turnos; track t) {
+                  <mat-option [value]="t">{{ t }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Situação inicial</mat-label>
+              <mat-select formControlName="situacao">
+                @for (s of situacoes; track s.value) {
+                  <mat-option [value]="s.value">{{ s.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <div class="step-actions">
+            <button mat-flat-button color="primary" matStepperNext
+                    (click)="step2Form.markAllAsTouched()">Avançar →</button>
+            <button mat-stroked-button matStepperPrevious>← Voltar</button>
+          </div>
+        </div>
+      </mat-step>
+
+      <!-- ══ ETAPA 3 — Documentos ══ -->
+      <mat-step label="Documentos">
+        <div class="step-content">
+          <div class="section-label">DOCUMENTOS ENTREGUES</div>
+          <div class="doc-list">
+            @for (doc of documentos; track doc) {
+              <mat-checkbox [checked]="isDocChecked(doc)" (change)="toggleDoc(doc)">
+                {{ doc }}
+              </mat-checkbox>
+            }
+          </div>
+
+          <div class="section-label mt">Observações</div>
+          <mat-form-field appearance="outline" class="full-width" [formGroup]="step3Form">
+            <mat-label>Observações</mat-label>
+            <textarea matInput formControlName="observacoes" rows="3" style="resize:vertical"></textarea>
+          </mat-form-field>
+
+          <div class="step-actions">
+            <button mat-flat-button color="primary" matStepperNext>Avançar →</button>
+            <button mat-stroked-button matStepperPrevious>← Voltar</button>
+          </div>
+        </div>
+      </mat-step>
+
+      <!-- ══ ETAPA 4 — Confirmação ══ -->
+      <mat-step label="Confirmação">
+        <div class="step-content">
+          <div class="section-label">RESUMO DA MATRÍCULA</div>
+
+          <div class="resumo-aluno">
+            <div class="ra-header">
+              <span class="ra-nome">{{ alunoSelecionado()?.nome }}</span>
+              <span class="badge badge-green">Selecionado</span>
+            </div>
+            <div class="ra-info">
+              Série: {{ step2Form.value.serie }} · Turno: {{ step2Form.value.turno }}
+            </div>
+            <div class="ra-info">
+              <span class="badge badge-green">{{ step2Form.value.situacao }}</span>
+              · Ano letivo {{ anoLetivo }}
+            </div>
+          </div>
+
+          <div class="resumo-docs">
+            @for (doc of documentos; track doc) {
+              <div class="rd-item">
+                <span [class.checked]="isDocChecked(doc)">{{ isDocChecked(doc) ? '✔' : '○' }}</span>
+                {{ doc }}
+              </div>
+            }
+          </div>
+
+          <mat-checkbox [formControl]="step4Confirm" class="confirm-check">
+            Confirmo que os dados estão corretos
+          </mat-checkbox>
+
+          <div class="step-actions">
+            <button
+              mat-flat-button color="primary"
+              [disabled]="!step4Confirm.value || submitting()"
+              [style.opacity]="!step4Confirm.value ? '0.5' : '1'"
+              (click)="salvarMatricula()"
+            >
+              @if (submitting()) {
+                <mat-spinner diameter="18" style="display:inline-block"></mat-spinner>
+              } @else {
+                ✔ Salvar Matrícula
+              }
+            </button>
+            <button mat-stroked-button matStepperPrevious>← Voltar</button>
+          </div>
+        </div>
+      </mat-step>
+
+    </mat-stepper>
+  }
 </div>

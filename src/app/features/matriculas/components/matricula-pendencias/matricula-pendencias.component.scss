@@ -1,0 +1,11 @@
+.page-wrap { padding: 24px 28px; max-width: 900px; display: flex; flex-direction: column; gap: 14px; }
+.page-title { display: flex; align-items: center; gap: 10px; font-size: 24px; font-weight: 700; }
+.title-icon { width: 32px; height: 32px; border-radius: 50%; background: var(--app-warn-l); border: 1px solid var(--app-rule); display: flex; align-items: center; justify-content: center; }
+.loading { padding: 24px; text-align: center; color: var(--mat-sys-on-surface-variant); }
+.empty-state { padding: 48px; text-align: center; font-size: 18px; color: var(--mat-sys-on-surface-variant); }
+.alert-warn { background: var(--app-warn-l); border: 1.5px solid var(--app-warn); border-radius: 8px; padding: 14px 16px; font-size: 14px; }
+.grupo-titulo { font-size: 15px; font-weight: 700; border-bottom: 1px solid var(--app-rule); padding-bottom: 6px; }
+.grupo-tabela { display: flex; flex-direction: column; border: 1px solid var(--app-rule); border-radius: 6px; }
+.pendencia-row { display: flex; align-items: center; gap: 16px; padding: 12px 16px; border-bottom: 1px solid var(--app-rule); &:last-child { border-bottom: none; } }
+.pr-nome { flex: 1; font-size: 14px; font-weight: 600; }
+.pr-ano  { font-size: 13px; color: var(--mat-sys-on-surface-variant); }

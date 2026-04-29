@@ -1,0 +1,88 @@
+<div class="page-wrap">
+  <div class="page-title"><div class="title-icon">✏️</div><span>Atualizar Dados — Aluno #{{ alunoId() }}</span></div>
+
+  @if (loading()) {
+    <div class="loading">Carregando dados do aluno…</div>
+  } @else {
+    <div [formGroup]="form" class="form-col">
+
+      <div class="section-label">DADOS PESSOAIS</div>
+      <div class="form-row-3">
+        <mat-form-field appearance="outline">
+          <mat-label>Nome completo</mat-label>
+          <input matInput formControlName="nome" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Data de Nascimento</mat-label>
+          <input matInput formControlName="dataNascimento" placeholder="YYYY-MM-DD" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>CPF</mat-label>
+          <input matInput formControlName="cpf" />
+        </mat-form-field>
+      </div>
+
+      <div class="section-label">RESPONSÁVEL</div>
+      <div class="form-row-3">
+        <mat-form-field appearance="outline">
+          <mat-label>Nome da mãe</mat-label>
+          <input matInput formControlName="nomeMae" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Telefone</mat-label>
+          <input matInput formControlName="telefone" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>E-mail</mat-label>
+          <input matInput formControlName="email" type="email" />
+        </mat-form-field>
+      </div>
+
+      <div class="section-label">ENDEREÇO</div>
+      <div class="form-row-3">
+        <mat-form-field appearance="outline">
+          <mat-label>Logradouro</mat-label>
+          <input matInput formControlName="endereco" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Bairro</mat-label>
+          <input matInput formControlName="bairro" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>CEP</mat-label>
+          <input matInput formControlName="cep" />
+        </mat-form-field>
+      </div>
+
+      <div class="section-label">MATRÍCULA 2027</div>
+      <div class="form-row-3">
+        <mat-form-field appearance="outline">
+          <mat-label>Série</mat-label>
+          <mat-select formControlName="serie">
+            @for (s of series; track s) { <mat-option [value]="s">{{ s }}</mat-option> }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Turma</mat-label>
+          <mat-select formControlName="turmaId">
+            @for (t of turmas(); track t.id) { <mat-option [value]="t.id">{{ t.nome }}</mat-option> }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Turno</mat-label>
+          <mat-select formControlName="turno">
+            @for (t of turnos; track t) { <mat-option [value]="t">{{ t }}</mat-option> }
+          </mat-select>
+        </mat-form-field>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button mat-flat-button color="primary" [disabled]="saving()" (click)="salvarERematricular()">
+        @if (saving()) { <mat-spinner diameter="18"></mat-spinner> } @else { Salvar e Rematricular }
+      </button>
+      <button mat-stroked-button (click)="pularParaPendencias()">Pular — adicionar às pendências</button>
+      <button mat-button (click)="voltar()">← Voltar</button>
+    </div>
+  }
+</div>

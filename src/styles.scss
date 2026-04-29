@@ -8,7 +8,10 @@ html {
       primary: mat.$azure-palette,
       tertiary: mat.$blue-palette,
     ),
-    typography: Roboto,
+    typography: (
+      plain-family: 'Caveat, "Caveat Brush", cursive',
+      brand-family: 'Caveat, "Caveat Brush", cursive',
+    ),
     density: 0,
   ));
 }
@@ -16,25 +19,130 @@ html {
 html, body {
   height: 100%;
   margin: 0;
-  font-family: Roboto, "Helvetica Neue", sans-serif;
-  background: var(--mat-sys-background);
-  color: var(--mat-sys-on-background);
+  font-family: var(--sketch-font);
+  background: #edeef3;
+  color: var(--ink);
 }
 
-* {
-  box-sizing: border-box;
+* { box-sizing: border-box; }
+
+/* ─── Sketch wireframe tokens (espelha o wireframe original) ────── */
+:root {
+  --ink:        #1a1a2e;
+  --mid:        #6b6b8a;
+  --light:      #e8e8f0;
+  --rule:       #c4c4d8;
+  --blue:       #3a6fd8;
+  --blue-l:     #d8e4ff;
+  --warn:       #d97706;
+  --warn-l:     #fff3cd;
+  --err:        #c0392b;
+  --err-l:      #fde8e6;
+  --paper:      #f7f7fb;
+  --white:      #ffffff;
+  --sketch-font: 'Caveat', 'Caveat Brush', cursive;
+  --r:          4px;
+
+  /* compat com tokens antigos */
+  --app-rule:         var(--rule);
+  --app-paper:        var(--paper);
+  --app-err:          var(--err);
+  --app-err-l:        var(--err-l);
+  --app-warn:         var(--warn);
+  --app-warn-l:       var(--warn-l);
+  --app-success:      #1a5e2a;
+  --app-success-l:    #d4edda;
+  --app-info:         var(--blue);
+  --app-info-l:       var(--blue-l);
+  --app-space-1:      4px;
+  --app-space-2:      8px;
+  --app-space-3:      12px;
+  --app-space-4:      16px;
+  --app-space-6:      24px;
+  --app-radius-sm:    4px;
+  --app-radius-md:    4px;
+  --app-radius-lg:    6px;
+  --app-header-h:     56px;
+  --app-tabbar-h:     44px;
+  --app-breadcrumb-h: 26px;
+  --app-bottombar-h:  44px;
+  --app-sidebar-w:    240px;
+  --app-filter-w:     220px;
 }
 
-.full-width {
-  width: 100%;
+/* ─── Dark theme ─────────────────────────────────────────────────── */
+body.dark {
+  --ink:    #e8e8f5;
+  --mid:    #9999bb;
+  --rule:   #44445a;
+  --blue:   #6a9fff;
+  --blue-l: #1e2a4a;
+  --warn:   #f5a623;
+  --warn-l: #3a2e10;
+  --err:    #ff6b6b;
+  --err-l:  #3a1010;
+  --paper:  #16162a;
+  --white:  #1e1e32;
+
+  --app-rule:      var(--rule);
+  --app-paper:     var(--paper);
+  --app-err:       var(--err);
+  --app-err-l:     var(--err-l);
+  --app-warn:      var(--warn);
+  --app-warn-l:    var(--warn-l);
+  --app-info:      var(--blue);
+  --app-info-l:    var(--blue-l);
+
+  background: #12121e;
 }
 
-.spacer {
-  flex: 1 1 auto;
+/* ─── High contrast theme ────────────────────────────────────────── */
+body.high-contrast {
+  --ink:   #000;
+  --mid:   #333;
+  --rule:  #888;
+  --blue:  #0000ee;
+  --blue-l:#ddddff;
+  --warn:  #885500;
+  --warn-l:#ffffcc;
+  --err:   #cc0000;
+  --err-l: #ffcccc;
+  --paper: #fff;
+  --white: #fff;
+
+  --app-rule:   var(--rule);
+  --app-paper:  var(--paper);
+  --app-info:   var(--blue);
+  --app-info-l: var(--blue-l);
+
+  background: #fff;
 }
+body.high-contrast * { border-radius: 0 !important; }
+
+/* ─── Tipografia global em estilo manuscrito ─────────────────────── */
+body, button, input, select, textarea {
+  font-family: var(--sketch-font);
+  font-size: 16px;
+  color: var(--ink);
+}
+
+/* Aplicar Caveat também aos componentes Material */
+.mat-mdc-button, .mat-mdc-icon-button, .mat-mdc-outlined-button,
+.mat-mdc-raised-button, .mat-mdc-unelevated-button, .mat-mdc-fab,
+.mat-mdc-menu-content, .mat-mdc-form-field, .mat-mdc-card,
+.mat-mdc-dialog-container, .mat-mdc-snack-bar-container,
+.mat-mdc-tooltip, .mat-mdc-list-item, .mat-mdc-option,
+.mat-mdc-select, .mat-mdc-input-element, .mat-mdc-chip,
+.mdc-button__label {
+  font-family: var(--sketch-font) !important;
+}
+
+/* ─── Utility classes ─────────────────────────────────────────────── */
+.full-width { width: 100%; }
+.spacer     { flex: 1 1 auto; }
 
 .page-container {
-  padding: 24px;
+  padding: 24px 28px;
   max-width: 1200px;
   margin: 0 auto;
 }
@@ -49,7 +157,7 @@ html, body {
 .empty-state {
   text-align: center;
   padding: 48px 16px;
-  color: var(--mat-sys-on-surface-variant);
+  color: var(--mid);
 }
 
 .loading-overlay {
@@ -64,10 +172,7 @@ html, body {
   gap: 16px;
   flex-wrap: wrap;
 }
-
-.form-row > * {
-  flex: 1 1 240px;
-}
+.form-row > * { flex: 1 1 240px; }
 
 .dialog-actions {
   display: flex;
@@ -76,26 +181,86 @@ html, body {
   margin-top: 16px;
 }
 
+/* ─── Badge helpers (estilo wireframe) ───────────────────────────── */
+.badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  border: 1.5px solid;
+}
+.badge-green  { background: #d4edda;       color: #1a5e2a;     border-color: #1a5e2a; }
+.badge-red    { background: var(--err-l);  color: var(--err);  border-color: var(--err); }
+.badge-yellow { background: var(--warn-l); color: var(--warn); border-color: var(--warn); }
+.badge-orange { background: var(--warn-l); color: var(--warn); border-color: var(--warn); }
+.badge-blue   { background: var(--blue-l); color: var(--blue); border-color: var(--blue); }
+.badge-gray   { background: var(--light);  color: var(--mid);  border-color: var(--rule); }
+
+/* ─── Snackbar themes ─────────────────────────────────────────────── */
 .snackbar-success {
-  --mdc-snackbar-container-color: #2e7d32;
+  --mdc-snackbar-container-color: #1a5e2a;
   --mdc-snackbar-supporting-text-color: #fff;
   --mat-snack-bar-button-color: #fff;
 }
-
 .snackbar-error {
-  --mdc-snackbar-container-color: #c62828;
+  --mdc-snackbar-container-color: var(--err);
   --mdc-snackbar-supporting-text-color: #fff;
   --mat-snack-bar-button-color: #fff;
 }
-
 .snackbar-info {
-  --mdc-snackbar-container-color: #1565c0;
+  --mdc-snackbar-container-color: var(--blue);
+  --mdc-snackbar-supporting-text-color: #fff;
+  --mat-snack-bar-button-color: #fff;
+}
+.snackbar-warning {
+  --mdc-snackbar-container-color: var(--warn);
   --mdc-snackbar-supporting-text-color: #fff;
   --mat-snack-bar-button-color: #fff;
 }
 
-.snackbar-warning {
-  --mdc-snackbar-container-color: #ef6c00;
-  --mdc-snackbar-supporting-text-color: #fff;
-  --mat-snack-bar-button-color: #fff;
+/* ─── Form fields no estilo sketch ───────────────────────────────── */
+.wf-form { display: flex; flex-direction: column; gap: 16px; max-width: 680px; }
+.wf-row  { display: flex; gap: 16px; flex-wrap: wrap; }
+.wf-field { display: flex; flex-direction: column; gap: 5px; flex: 1 1 200px; }
+.wf-field label { font-size: 14px; color: var(--mid); font-weight: 600; }
+.wf-field input, .wf-field select, .wf-field textarea {
+  border: 2px solid var(--ink); border-radius: var(--r);
+  padding: 8px 12px; font-family: var(--sketch-font); font-size: 16px;
+  background: var(--paper); color: var(--ink); outline: none; width: 100%;
 }
+.wf-field input:focus, .wf-field select:focus, .wf-field textarea:focus { border-color: var(--blue); }
+.wf-field textarea { height: 80px; resize: vertical; }
+.wf-field.full { flex: 1 1 100%; }
+
+/* ─── Botões sketch ──────────────────────────────────────────────── */
+.btn-primary {
+  background: var(--ink); color: var(--white); border: 2px solid var(--ink);
+  border-radius: 20px; padding: 8px 24px; font-family: var(--sketch-font);
+  font-size: 16px; font-weight: 700; cursor: pointer; transition: background .15s;
+}
+.btn-primary:hover { background: var(--blue); border-color: var(--blue); }
+.btn-secondary {
+  background: var(--white); color: var(--ink); border: 2px solid var(--ink);
+  border-radius: 20px; padding: 8px 20px; font-family: var(--sketch-font);
+  font-size: 16px; cursor: pointer; transition: background .15s;
+}
+.btn-secondary:hover { background: var(--blue-l); }
+.btn-danger {
+  background: var(--err-l); color: var(--err); border: 2px solid var(--err);
+  border-radius: 20px; padding: 8px 20px; font-family: var(--sketch-font);
+  font-size: 16px; font-weight: 700; cursor: pointer;
+}
+.btn-danger:hover { background: var(--err); color: var(--white); }
+.btn-sm { padding: 4px 14px; font-size: 14px; border-radius: 14px; }
+
+/* ─── Tabela sketch ──────────────────────────────────────────────── */
+.wf-table-wrap { overflow-x: auto; border: 2px solid var(--ink); border-radius: var(--r); }
+.wf-table { width: 100%; border-collapse: collapse; font-size: 15px; }
+.wf-table th {
+  background: var(--ink); color: var(--white);
+  padding: 10px 14px; text-align: left; font-weight: 700; font-size: 14px; white-space: nowrap;
+}
+.wf-table td { padding: 9px 14px; border-bottom: 1px solid var(--rule); background: var(--white); }
+.wf-table tr:nth-child(even) td { background: var(--paper); }
+.wf-table tr:hover td { background: var(--blue-l); }

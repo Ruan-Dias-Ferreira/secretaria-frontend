@@ -1,0 +1,32 @@
+<div class="calendar">
+  <!-- Header -->
+  <div class="cal-header">
+    <button class="cal-nav" (click)="prevMonth()">‹</button>
+    <span class="cal-month-label">{{ monthLabel() }}</span>
+    <button class="cal-nav" (click)="nextMonth()">›</button>
+  </div>
+
+  <!-- Day names -->
+  <div class="cal-grid">
+    @for (d of days; track d) {
+      <div class="cal-day-name">{{ d }}</div>
+    }
+    <!-- Day cells -->
+    @for (cell of cells(); track ($index)) {
+      <div
+        class="cal-cell"
+        [class.today]="isToday(cell)"
+        [class.empty]="cell === null"
+        [class.has-event]="hasEvent(cell)"
+        (click)="openEventDialog(cell)"
+      >
+        @if (cell !== null) {
+          <span class="cal-day-num">{{ cell }}</span>
+          @if (hasEvent(cell)) {
+            <span class="event-dot"></span>
+          }
+        }
+      </div>
+    }
+  </div>
+</div>
