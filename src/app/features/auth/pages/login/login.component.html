@@ -1,0 +1,54 @@
+<mat-card>
+  <mat-card-header>
+    <mat-icon class="login-icon">school</mat-icon>
+  </mat-card-header>
+
+  <mat-card-content>
+    <h2 style="text-align:center; margin: 0 0 24px;">Secretaria Escolar</h2>
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Login</mat-label>
+        <input matInput formControlName="login" autocomplete="username" />
+        <mat-icon matSuffix>person</mat-icon>
+        @if (loginCtrl.touched && loginCtrl.hasError('required')) {
+          <mat-error>Login obrigatório.</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Senha</mat-label>
+        <input
+          matInput
+          [type]="hidePassword() ? 'password' : 'text'"
+          formControlName="senha"
+          autocomplete="current-password"
+        />
+        <button
+          mat-icon-button
+          matSuffix
+          type="button"
+          (click)="hidePassword.set(!hidePassword())"
+          aria-label="Mostrar senha"
+        >
+          <mat-icon>{{ hidePassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+        </button>
+        @if (senhaCtrl.touched && senhaCtrl.hasError('required')) {
+          <mat-error>Senha obrigatória.</mat-error>
+        }
+        @if (senhaCtrl.touched && senhaCtrl.hasError('minlength')) {
+          <mat-error>Mínimo 6 caracteres.</mat-error>
+        }
+      </mat-form-field>
+
+      <div class="submit-row">
+        <button mat-flat-button color="primary" type="submit" [disabled]="loading()">
+          @if (loading()) {
+            <mat-spinner diameter="20" style="display:inline-block; margin-right:8px;" />
+          }
+          {{ loading() ? 'Entrando...' : 'Entrar' }}
+        </button>
+      </div>
+    </form>
+  </mat-card-content>
+</mat-card>

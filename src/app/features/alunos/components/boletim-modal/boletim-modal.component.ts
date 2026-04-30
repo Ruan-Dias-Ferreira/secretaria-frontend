@@ -1,6 +1,6 @@
-import { Component, Inject, OnDestroy, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { Subject, takeUntil } from 'rxjs';
+import { DecimalPipe } from '@angular/common';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTableModule } from '@angular/material/table';
@@ -8,19 +8,20 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { BoletimResponse } from '../../../../core/models/responses/boletim.response';
 import { SituacaoNota } from '../../../../core/models/enums/situacao-nota.enum';
-import { NotaService } from '../../../notas/services/nota.service';
+import { NotaService } from '../../../notas/data-access/nota.service';
 
 export interface BoletimDialogData { alunoId: number; }
 
 @Component({
   selector: 'app-boletim-modal',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    CommonModule,
+    DecimalPipe,
     MatDialogModule,
     MatButtonModule,
     MatTableModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
   ],
   templateUrl: './boletim-modal.component.html',
   styles: [`
@@ -37,29 +38,25 @@ export interface BoletimDialogData { alunoId: number; }
     .badge-default     { background: var(--mat-sys-surface-variant); color: var(--mat-sys-on-surface-variant); }
   `]
 })
-export class BoletimModalComponent implements OnInit, OnDestroy {
+export class BoletimModalComponent {
 
-  boletim: BoletimResponse[] = [];
-  loading = false;
-  errorMsg = '';
+  protected boletim = signal<BoletimResponse[]>([]);
+  protected loading = signal(false);
+  protected errorMsg = signal('');
 
   readonly displayedColumns = ['disciplina', 'b1', 'b2', 'b3', 'b4', 'media', 'situacao'];
 
-  private destroy$ = new Subject<void>();
+  private notaService = inject(NotaService);
+  private dialogRef = inject(MatDialogRef<BoletimModalComponent>);
+  protected data = inject(MAT_DIALOG_DATA) as BoletimDialogData;
 
-  constructor(
-    private notaService: NotaService,
-    private dialogRef: MatDialogRef<BoletimModalComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: BoletimDialogData
-  ) {}
-
-  ngOnInit(): void {
-    this.loading = true;
+  constructor() {
+    this.loading.set(true);
     this.notaService.getBoletim(this.data.alunoId)
-      .pipe(takeUntil(this.destroy$))
+      .pipe(takeUntilDestroyed())
       .subscribe({
-        next: d => { this.boletim = d; this.loading = false; },
-        error: () => { this.errorMsg = 'Erro ao carregar boletim.'; this.loading = false; }
+        next: d => { this.boletim.set(d); this.loading.set(false); },
+        error: () => { this.errorMsg.set('Erro ao carregar boletim.'); this.loading.set(false); }
       });
   }
 
@@ -78,6 +75,4 @@ export class BoletimModalComponent implements OnInit, OnDestroy {
   }
 
   fechar(): void { this.dialogRef.close(); }
-
-  ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
 }

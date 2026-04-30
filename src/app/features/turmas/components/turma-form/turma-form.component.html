@@ -7,43 +7,59 @@
       </button>
     </div>
 
-    <form [formGroup]="form" (ngSubmit)="onSubmit()" *ngIf="form">
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
       <div class="form-grid">
         <mat-form-field appearance="outline" class="full">
           <mat-label>Nome</mat-label>
           <input matInput formControlName="nome" />
-          <mat-error *ngIf="form.get('nome')?.hasError('required')">Nome é obrigatório.</mat-error>
-          <mat-error *ngIf="form.get('nome')?.hasError('minlength')">Mínimo 2 caracteres.</mat-error>
+          @if (form.get('nome')?.hasError('required')) {
+            <mat-error>Nome é obrigatório.</mat-error>
+          }
+          @if (form.get('nome')?.hasError('minlength')) {
+            <mat-error>Mínimo 2 caracteres.</mat-error>
+          }
         </mat-form-field>
 
         <mat-form-field appearance="outline">
           <mat-label>Ano Letivo</mat-label>
           <input matInput type="number" formControlName="anoLetivo" />
-          <mat-error *ngIf="form.get('anoLetivo')?.invalid">Informe um ano válido.</mat-error>
+          @if (form.get('anoLetivo')?.invalid) {
+            <mat-error>Informe um ano válido.</mat-error>
+          }
         </mat-form-field>
 
         <mat-form-field appearance="outline">
           <mat-label>Turno</mat-label>
           <mat-select formControlName="turno">
-            <mat-option *ngFor="let t of turnos" [value]="t.value">{{ t.label }}</mat-option>
+            @for (t of turnos; track t.value) {
+              <mat-option [value]="t.value">{{ t.label }}</mat-option>
+            }
           </mat-select>
-          <mat-error *ngIf="form.get('turno')?.hasError('required')">Selecione um turno.</mat-error>
+          @if (form.get('turno')?.hasError('required')) {
+            <mat-error>Selecione um turno.</mat-error>
+          }
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="full">
           <mat-label>Curso</mat-label>
           <input matInput formControlName="curso" />
-          <mat-error *ngIf="form.get('curso')?.hasError('required')">Curso é obrigatório.</mat-error>
+          @if (form.get('curso')?.hasError('required')) {
+            <mat-error>Curso é obrigatório.</mat-error>
+          }
         </mat-form-field>
       </div>
 
       <div class="actions">
         <button type="button" mat-button (click)="cancelar()">Cancelar</button>
-        <button type="submit" mat-flat-button color="primary" [disabled]="loading">
-          <span *ngIf="!loading">{{ isEdicao ? 'Atualizar' : 'Salvar' }}</span>
-          <span *ngIf="loading" class="loading-inline">
-            <mat-spinner diameter="18"></mat-spinner> Salvando...
-          </span>
+        <button type="submit" mat-flat-button color="primary" [disabled]="loading()">
+          @if (!loading()) {
+            <span>{{ isEdicao ? 'Atualizar' : 'Salvar' }}</span>
+          }
+          @if (loading()) {
+            <span class="loading-inline">
+              <mat-spinner diameter="18"></mat-spinner> Salvando...
+            </span>
+          }
         </button>
       </div>
     </form>

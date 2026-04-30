@@ -1,0 +1,102 @@
+<div class="page-container">
+  <div class="page-header">
+    <h1>Alunos</h1>
+    @if (isSecretaria()) {
+      <button
+        mat-flat-button
+        color="primary"
+        (click)="abrirNovo()"
+      >
+        <mat-icon>add</mat-icon>
+        Novo Aluno
+      </button>
+    }
+  </div>
+
+  @if (loading()) {
+    <div class="loading-overlay">
+      <mat-spinner diameter="48"></mat-spinner>
+    </div>
+  }
+
+  @if (!loading() && alunos().length > 0) {
+    <table
+      mat-table
+      [dataSource]="alunos()"
+    >
+      <ng-container matColumnDef="id">
+        <th mat-header-cell *matHeaderCellDef>ID</th>
+        <td mat-cell *matCellDef="let a">{{ a.id }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="nome">
+        <th mat-header-cell *matHeaderCellDef>Nome</th>
+        <td mat-cell *matCellDef="let a">{{ a.nome }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="cpf">
+        <th mat-header-cell *matHeaderCellDef>CPF</th>
+        <td mat-cell *matCellDef="let a">{{ a.cpf }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="email">
+        <th mat-header-cell *matHeaderCellDef>Email</th>
+        <td mat-cell *matCellDef="let a">{{ a.email }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="acoes">
+        <th mat-header-cell *matHeaderCellDef style="text-align:right;">Ações</th>
+        <td mat-cell *matCellDef="let a">
+          <div class="actions-cell">
+            <button mat-icon-button matTooltip="Detalhes" (click)="abrirDetalhe(a.id)">
+              <mat-icon>info</mat-icon>
+            </button>
+            <button mat-icon-button matTooltip="Boletim" (click)="abrirBoletim(a.id)">
+              <mat-icon>grade</mat-icon>
+            </button>
+            <button mat-icon-button matTooltip="Frequência" (click)="abrirFrequencia(a.id)">
+              <mat-icon>event_available</mat-icon>
+            </button>
+            @if (isSecretaria()) {
+              <button
+                mat-icon-button
+                color="primary"
+                matTooltip="Editar"
+                (click)="abrirEdicao(a.id)"
+              >
+                <mat-icon>edit</mat-icon>
+              </button>
+            }
+            @if (isSecretaria()) {
+              <button
+                mat-icon-button
+                color="warn"
+                matTooltip="Excluir"
+                (click)="excluir(a.id, a.nome)"
+              >
+                <mat-icon>delete</mat-icon>
+              </button>
+            }
+          </div>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+    </table>
+  }
+
+  @if (!loading() && alunos().length === 0) {
+    <div class="empty-state">
+      <mat-icon style="font-size:48px;width:48px;height:48px;">people_outline</mat-icon>
+      <p>Nenhum aluno cadastrado.</p>
+    </div>
+  }
+</div>
+
+@if (modalAtivo() === 'form') {
+  <app-aluno-form
+    [alunoId]="alunoSelecionadoId()"
+    (close)="fecharModal()"
+  ></app-aluno-form>
+}

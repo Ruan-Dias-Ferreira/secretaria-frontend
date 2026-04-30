@@ -1,7 +1,6 @@
-import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Subject, takeUntil } from 'rxjs';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, input, output, signal } from '@angular/core';
+import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -11,14 +10,14 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { AlunoRequest } from '../../../../core/models/requests/aluno.request';
-import { AlunoService } from '../../services/aluno.service';
+import { AlunoService } from '../../data-access/aluno.service';
 import { NotificationService } from '../../../../core/services/notification.service';
 
 @Component({
   selector: 'app-aluno-form',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    CommonModule,
     ReactiveFormsModule,
     MatDialogModule,
     MatFormFieldModule,
@@ -56,72 +55,65 @@ import { NotificationService } from '../../../../core/services/notification.serv
     .actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
   `]
 })
-export class AlunoFormComponent implements OnInit, OnDestroy {
-  @Input() alunoId: number | null = null;
-  @Output() close = new EventEmitter<void>();
+export class AlunoFormComponent {
+  readonly alunoId = input<number | null>(null);
+  readonly close = output<void>();
 
-  form!: FormGroup;
-  loading = false;
+  protected loading = signal(false);
 
-  private destroy$ = new Subject<void>();
+  private fb = inject(NonNullableFormBuilder);
+  private alunoService = inject(AlunoService);
+  private notification = inject(NotificationService);
+  private destroyRef = inject(DestroyRef);
 
-  constructor(
-    private fb: FormBuilder,
-    private alunoService: AlunoService,
-    private notification: NotificationService
-  ) {}
+  protected form = this.fb.group({
+    nome: ['', [Validators.required, Validators.minLength(3)]],
+    cpf: ['', [Validators.required]],
+    rg: ['', [Validators.required]],
+    dataNascimento: ['', [Validators.required]],
+    email: ['', [Validators.required, Validators.email]],
+    telefone: ['', [Validators.required]],
+    endereco: ['', [Validators.required]],
+    nomeMae: ['', [Validators.required]],
+    nomePai: ['']
+  });
 
-  ngOnInit(): void {
-    this.form = this.fb.group({
-      nome: ['', [Validators.required, Validators.minLength(3)]],
-      cpf: ['', [Validators.required]],
-      rg: ['', [Validators.required]],
-      dataNascimento: ['', [Validators.required]],
-      email: ['', [Validators.required, Validators.email]],
-      telefone: ['', [Validators.required]],
-      endereco: ['', [Validators.required]],
-      nomeMae: ['', [Validators.required]],
-      nomePai: ['']
-    });
+  protected isEdicao = computed(() => this.alunoId() !== null);
 
-    if (this.alunoId !== null) this.carregarAluno(this.alunoId);
+  constructor() {
+    const id = this.alunoId();
+    if (id !== null) this.carregarAluno(id);
   }
 
-  get isEdicao(): boolean { return this.alunoId !== null; }
-
   private carregarAluno(id: number): void {
-    this.loading = true;
+    this.loading.set(true);
     this.alunoService.findById(id)
-      .pipe(takeUntil(this.destroy$))
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (aluno) => { this.form.patchValue(aluno); this.loading = false; },
-        error: () => { this.loading = false; }
+        next: (aluno) => { this.form.patchValue(aluno); this.loading.set(false); },
+        error: () => { this.loading.set(false); }
       });
   }
 
   onSubmit(): void {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
 
-    this.loading = true;
+    this.loading.set(true);
     const request = this.form.value as AlunoRequest;
-    const operacao$ = this.isEdicao && this.alunoId !== null
-      ? this.alunoService.update(this.alunoId, request)
+    const id = this.alunoId();
+    const operacao$ = this.isEdicao() && id !== null
+      ? this.alunoService.update(id, request)
       : this.alunoService.save(request);
 
-    operacao$.pipe(takeUntil(this.destroy$)).subscribe({
+    operacao$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
-        this.loading = false;
-        this.notification.success(this.isEdicao ? 'Aluno atualizado.' : 'Aluno cadastrado.');
+        this.loading.set(false);
+        this.notification.success(this.isEdicao() ? 'Aluno atualizado.' : 'Aluno cadastrado.');
         this.close.emit();
       },
-      error: () => { this.loading = false; }
+      error: () => { this.loading.set(false); }
     });
   }
 
   cancelar(): void { this.close.emit(); }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
-  }
 }

@@ -6,7 +6,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { DisciplinaResponse } from '../../../../core/models/responses/disciplina.response';
-import { DisciplinaService } from '../../services/disciplina.service';
+import { DisciplinaService } from '../../data-access/disciplina.service';
 
 export interface DisciplinaDetailData { disciplinaId: number; }
 

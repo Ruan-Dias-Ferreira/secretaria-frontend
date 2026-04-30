@@ -1,7 +1,7 @@
-import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Subject, forkJoin, takeUntil } from 'rxjs';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, input, output, signal } from '@angular/core';
+import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { forkJoin } from 'rxjs';
 
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -14,16 +14,16 @@ import { DisciplinaRequest } from '../../../../core/models/requests/disciplina.r
 import { TurmaResponse } from '../../../../core/models/responses/turma.response';
 import { UsuarioResponse } from '../../../../core/models/responses/usuario.response';
 import { Role } from '../../../../core/models/enums/role.enum';
-import { DisciplinaService } from '../../services/disciplina.service';
-import { TurmaService } from '../../../turmas/services/turma.service';
-import { UsuarioService } from '../../../usuarios/services/usuario.service';
+import { DisciplinaService } from '../../data-access/disciplina.service';
+import { TurmaService } from '../../../turmas/data-access/turma.service';
+import { UsuarioService } from '../../../usuarios/data-access/usuario.service';
 import { NotificationService } from '../../../../core/services/notification.service';
 
 @Component({
   selector: 'app-disciplina-form',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    CommonModule,
     ReactiveFormsModule,
     MatFormFieldModule,
     MatInputModule,
@@ -52,64 +52,60 @@ import { NotificationService } from '../../../../core/services/notification.serv
     mat-form-field { width: 100%; }
   `]
 })
-export class DisciplinaFormComponent implements OnInit, OnDestroy {
+export class DisciplinaFormComponent {
 
-  @Input() disciplinaId: number | null = null;
-  @Output() close = new EventEmitter<void>();
+  readonly disciplinaId = input<number | null>(null);
+  readonly close = output<void>();
 
-  form!: FormGroup;
-  loading = false;
+  protected loading = signal(false);
+  protected turmas = signal<TurmaResponse[]>([]);
+  protected professores = signal<UsuarioResponse[]>([]);
 
-  turmas: TurmaResponse[] = [];
-  professores: UsuarioResponse[] = [];
+  private fb = inject(NonNullableFormBuilder);
+  private disciplinaService = inject(DisciplinaService);
+  private turmaService = inject(TurmaService);
+  private usuarioService = inject(UsuarioService);
+  private notification = inject(NotificationService);
+  private destroyRef = inject(DestroyRef);
 
-  private destroy$ = new Subject<void>();
+  protected form = this.fb.group({
+    nome: ['', [Validators.required, Validators.minLength(2)]],
+    cargaHoraria: [40, [Validators.required, Validators.min(1), Validators.max(2000)]],
+    turmaId: [null as number | null, [Validators.required]],
+    professorId: [null as number | null]
+  });
 
-  constructor(
-    private fb: FormBuilder,
-    private disciplinaService: DisciplinaService,
-    private turmaService: TurmaService,
-    private usuarioService: UsuarioService,
-    private notification: NotificationService
-  ) {}
+  get isEdicao(): boolean { return this.disciplinaId() !== null; }
 
-  ngOnInit(): void {
-    this.form = this.fb.group({
-      nome: ['', [Validators.required, Validators.minLength(2)]],
-      cargaHoraria: [40, [Validators.required, Validators.min(1), Validators.max(2000)]],
-      turmaId: [null, [Validators.required]],
-      professorId: [null]
-    });
-
+  constructor() {
     this.carregarDropdowns();
   }
 
-  get isEdicao(): boolean { return this.disciplinaId !== null; }
-
   private carregarDropdowns(): void {
-    this.loading = true;
+    this.loading.set(true);
     forkJoin({
       turmas: this.turmaService.findAll(),
       usuarios: this.usuarioService.findAll()
     })
-    .pipe(takeUntil(this.destroy$))
+    .pipe(takeUntilDestroyed(this.destroyRef))
     .subscribe({
       next: ({ turmas, usuarios }) => {
-        this.turmas = turmas;
-        this.professores = usuarios.filter(u => u.role === Role.PROFESSOR);
-        if (this.disciplinaId !== null) {
-          this.carregarDisciplina(this.disciplinaId);
+        this.turmas.set(turmas);
+        this.professores.set(usuarios.filter(u => u.role === Role.PROFESSOR));
+        const id = this.disciplinaId();
+        if (id !== null) {
+          this.carregarDisciplina(id);
         } else {
-          this.loading = false;
+          this.loading.set(false);
         }
       },
-      error: () => { this.loading = false; }
+      error: () => { this.loading.set(false); }
     });
   }
 
   private carregarDisciplina(id: number): void {
     this.disciplinaService.findById(id)
-      .pipe(takeUntil(this.destroy$))
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: d => {
           this.form.patchValue({
@@ -118,9 +114,9 @@ export class DisciplinaFormComponent implements OnInit, OnDestroy {
             turmaId: d.turmaId,
             professorId: d.professorId
           });
-          this.loading = false;
+          this.loading.set(false);
         },
-        error: () => { this.loading = false; }
+        error: () => { this.loading.set(false); }
       });
   }
 
@@ -129,30 +125,29 @@ export class DisciplinaFormComponent implements OnInit, OnDestroy {
       this.form.markAllAsTouched();
       return;
     }
-    this.loading = true;
-    const raw = this.form.value;
+    this.loading.set(true);
+    const raw = this.form.getRawValue();
     const request: DisciplinaRequest = {
       nome: raw.nome,
       cargaHoraria: raw.cargaHoraria,
-      turmaId: raw.turmaId,
+      turmaId: raw.turmaId!,
       professorId: raw.professorId ?? undefined
     };
 
-    const op$ = this.isEdicao && this.disciplinaId !== null
-      ? this.disciplinaService.update(this.disciplinaId, request)
+    const id = this.disciplinaId();
+    const op$ = this.isEdicao && id !== null
+      ? this.disciplinaService.update(id, request)
       : this.disciplinaService.save(request);
 
-    op$.pipe(takeUntil(this.destroy$)).subscribe({
+    op$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
-        this.loading = false;
+        this.loading.set(false);
         this.notification.success(this.isEdicao ? 'Disciplina atualizada.' : 'Disciplina cadastrada.');
         this.close.emit();
       },
-      error: () => { this.loading = false; }
+      error: () => { this.loading.set(false); }
     });
   }
 
   cancelar(): void { this.close.emit(); }
-
-  ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
 }

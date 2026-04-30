@@ -1,7 +1,7 @@
-import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { forkJoin, Subject, takeUntil } from 'rxjs';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, inject, input, output, signal } from '@angular/core';
+import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { forkJoin } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -12,9 +12,9 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 
 import { FrequenciaRequest } from '../../../../core/models/requests/frequencia.request';
-import { FrequenciaService } from '../../services/frequencia.service';
-import { AlunoService } from '../../../alunos/services/aluno.service';
-import { DisciplinaService } from '../../../disciplinas/services/disciplina.service';
+import { FrequenciaService } from '../../data-access/frequencia.service';
+import { AlunoService } from '../../../alunos/data-access/aluno.service';
+import { DisciplinaService } from '../../../disciplinas/data-access/disciplina.service';
 import { AlunoResponse } from '../../../../core/models/responses/aluno.response';
 import { DisciplinaResponse } from '../../../../core/models/responses/disciplina.response';
 import { NotificationService } from '../../../../core/services/notification.service';
@@ -22,8 +22,8 @@ import { NotificationService } from '../../../../core/services/notification.serv
 @Component({
   selector: 'app-frequencia-form',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    CommonModule,
     ReactiveFormsModule,
     MatFormFieldModule,
     MatInputModule,
@@ -53,89 +53,86 @@ import { NotificationService } from '../../../../core/services/notification.serv
     .spinner-center { display: flex; justify-content: center; padding: 32px 0; }
   `]
 })
-export class FrequenciaFormComponent implements OnInit, OnDestroy {
+export class FrequenciaFormComponent implements OnInit {
 
-  @Input() frequenciaId: number | null = null;
-  @Output() close = new EventEmitter<void>();
+  readonly frequenciaId = input<number | null>(null);
+  readonly close = output<void>();
 
-  form!: FormGroup;
-  loading = false;
+  private fb = inject(NonNullableFormBuilder);
+  private frequenciaService = inject(FrequenciaService);
+  private alunoService = inject(AlunoService);
+  private disciplinaService = inject(DisciplinaService);
+  private notification = inject(NotificationService);
+  private destroyRef = inject(DestroyRef);
 
-  alunos: AlunoResponse[] = [];
-  disciplinas: DisciplinaResponse[] = [];
+  protected loading = signal(false);
+  protected alunos = signal<AlunoResponse[]>([]);
+  protected disciplinas = signal<DisciplinaResponse[]>([]);
 
-  private destroy$ = new Subject<void>();
+  readonly form = this.fb.group({
+    alunoId:      this.fb.control<number | null>(null, [Validators.required]),
+    disciplinaId: this.fb.control<number | null>(null, [Validators.required]),
+    data:         ['', [Validators.required]],
+    presente:     [true]
+  });
 
-  constructor(
-    private fb: FormBuilder,
-    private frequenciaService: FrequenciaService,
-    private alunoService: AlunoService,
-    private disciplinaService: DisciplinaService,
-    private notification: NotificationService
-  ) {}
+  get isEdicao(): boolean { return this.frequenciaId() !== null; }
 
   ngOnInit(): void {
     const hoje = new Date().toISOString().substring(0, 10);
-    this.form = this.fb.group({
-      alunoId:      [null, [Validators.required]],
-      disciplinaId: [null, [Validators.required]],
-      data:         [hoje, [Validators.required]],
-      presente:     [true]
-    });
+    this.form.patchValue({ data: hoje });
     this.carregarDropdowns();
   }
 
-  get isEdicao(): boolean { return this.frequenciaId !== null; }
-
   private carregarDropdowns(): void {
-    this.loading = true;
+    this.loading.set(true);
     forkJoin({
       alunos:      this.alunoService.findAll(),
       disciplinas: this.disciplinaService.findAll()
     })
-      .pipe(takeUntil(this.destroy$))
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: ({ alunos, disciplinas }) => {
-          this.alunos      = alunos;
-          this.disciplinas = disciplinas;
-          if (this.frequenciaId !== null) {
-            this.carregarFrequencia(this.frequenciaId);
+          this.alunos.set(alunos);
+          this.disciplinas.set(disciplinas);
+          const id = this.frequenciaId();
+          if (id !== null) {
+            this.carregarFrequencia(id);
           } else {
-            this.loading = false;
+            this.loading.set(false);
           }
         },
-        error: () => { this.loading = false; }
+        error: () => { this.loading.set(false); }
       });
   }
 
   private carregarFrequencia(id: number): void {
     this.frequenciaService.findById(id)
-      .pipe(takeUntil(this.destroy$))
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: freq => { this.form.patchValue(freq); this.loading = false; },
-        error: () => { this.loading = false; }
+        next: freq => { this.form.patchValue(freq); this.loading.set(false); },
+        error: () => { this.loading.set(false); }
       });
   }
 
   onSubmit(): void {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
-    this.loading = true;
-    const request = this.form.value as FrequenciaRequest;
-    const op$ = this.isEdicao && this.frequenciaId !== null
-      ? this.frequenciaService.update(this.frequenciaId, request)
+    this.loading.set(true);
+    const request = this.form.getRawValue() as unknown as FrequenciaRequest;
+    const id = this.frequenciaId();
+    const op$ = this.isEdicao && id !== null
+      ? this.frequenciaService.update(id, request)
       : this.frequenciaService.save(request);
 
-    op$.pipe(takeUntil(this.destroy$)).subscribe({
+    op$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.notification.success(this.isEdicao ? 'Frequência atualizada.' : 'Frequência registrada.');
-        this.loading = false;
+        this.loading.set(false);
         this.close.emit();
       },
-      error: () => { this.loading = false; }
+      error: () => { this.loading.set(false); }
     });
   }
 
   cancelar(): void { this.close.emit(); }
-
-  ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
 }

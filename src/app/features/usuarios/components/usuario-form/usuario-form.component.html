@@ -7,45 +7,61 @@
       </button>
     </div>
 
-    <div *ngIf="loading" class="spinner-center">
-      <mat-spinner diameter="40"></mat-spinner>
-    </div>
-
-    <form [formGroup]="form" (ngSubmit)="onSubmit()" *ngIf="!loading">
-      <mat-form-field appearance="outline" style="width:100%">
-        <mat-label>Login</mat-label>
-        <input matInput formControlName="login" autocomplete="username" />
-        <mat-error *ngIf="form.get('login')?.hasError('required')">Login é obrigatório.</mat-error>
-        <mat-error *ngIf="form.get('login')?.hasError('minlength')">Mínimo 3 caracteres.</mat-error>
-      </mat-form-field>
-
-      <mat-form-field appearance="outline" style="width:100%; margin-top:8px;">
-        <mat-label>Senha</mat-label>
-        <input matInput [type]="senhaVisivel ? 'text' : 'password'"
-               formControlName="senha" autocomplete="new-password" />
-        <button mat-icon-button matSuffix type="button"
-                (click)="senhaVisivel = !senhaVisivel"
-                [attr.aria-label]="senhaVisivel ? 'Ocultar senha' : 'Mostrar senha'">
-          <mat-icon>{{ senhaVisivel ? 'visibility_off' : 'visibility' }}</mat-icon>
-        </button>
-        <mat-error *ngIf="form.get('senha')?.hasError('required')">Senha é obrigatória.</mat-error>
-        <mat-error *ngIf="form.get('senha')?.hasError('minlength')">Mínimo 6 caracteres.</mat-error>
-      </mat-form-field>
-
-      <mat-form-field appearance="outline" style="width:100%; margin-top:8px;">
-        <mat-label>Role</mat-label>
-        <mat-select formControlName="role">
-          <mat-option *ngFor="let r of roleOptions" [value]="r">{{ r }}</mat-option>
-        </mat-select>
-        <mat-error *ngIf="form.get('role')?.hasError('required')">Selecione uma role.</mat-error>
-      </mat-form-field>
-
-      <div class="dialog-actions">
-        <button type="button" mat-button (click)="cancelar()">Cancelar</button>
-        <button type="submit" mat-flat-button color="primary" [disabled]="loading">
-          {{ isEdicao ? 'Atualizar' : 'Salvar' }}
-        </button>
+    @if (loading) {
+      <div class="spinner-center">
+        <mat-spinner diameter="40"></mat-spinner>
       </div>
-    </form>
+    }
+
+    @if (!loading) {
+      <form [formGroup]="form" (ngSubmit)="onSubmit()">
+        <mat-form-field appearance="outline" style="width:100%">
+          <mat-label>Login</mat-label>
+          <input matInput formControlName="login" autocomplete="username" />
+          @if (form.get('login')?.hasError('required')) {
+            <mat-error>Login é obrigatório.</mat-error>
+          }
+          @if (form.get('login')?.hasError('minlength')) {
+            <mat-error>Mínimo 3 caracteres.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" style="width:100%; margin-top:8px;">
+          <mat-label>Senha</mat-label>
+          <input matInput [type]="senhaVisivel ? 'text' : 'password'"
+                 formControlName="senha" autocomplete="new-password" />
+          <button mat-icon-button matSuffix type="button"
+                  (click)="senhaVisivel = !senhaVisivel"
+                  [attr.aria-label]="senhaVisivel ? 'Ocultar senha' : 'Mostrar senha'">
+            <mat-icon>{{ senhaVisivel ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
+          @if (form.get('senha')?.hasError('required')) {
+            <mat-error>Senha é obrigatória.</mat-error>
+          }
+          @if (form.get('senha')?.hasError('minlength')) {
+            <mat-error>Mínimo 6 caracteres.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" style="width:100%; margin-top:8px;">
+          <mat-label>Role</mat-label>
+          <mat-select formControlName="role">
+            @for (r of roleOptions; track r) {
+              <mat-option [value]="r">{{ r }}</mat-option>
+            }
+          </mat-select>
+          @if (form.get('role')?.hasError('required')) {
+            <mat-error>Selecione uma role.</mat-error>
+          }
+        </mat-form-field>
+
+        <div class="dialog-actions">
+          <button type="button" mat-button (click)="cancelar()">Cancelar</button>
+          <button type="submit" mat-flat-button color="primary" [disabled]="loading">
+            {{ isEdicao ? 'Atualizar' : 'Salvar' }}
+          </button>
+        </div>
+      </form>
+    }
   </div>
 </div>

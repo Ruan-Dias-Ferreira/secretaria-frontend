@@ -11,7 +11,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { UsuarioRequest } from '../../../../core/models/requests/usuario.request';
-import { UsuarioService } from '../../services/usuario.service';
+import { UsuarioService } from '../../data-access/usuario.service';
 import { Role } from '../../../../core/models/enums/role.enum';
 import { NotificationService } from '../../../../core/services/notification.service';
 

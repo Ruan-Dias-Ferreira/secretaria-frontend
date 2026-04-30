@@ -1,0 +1,101 @@
+<div class="page-container">
+  <div class="page-header">
+    <h1>Disciplinas</h1>
+    @if (isSecretaria()) {
+      <button mat-flat-button color="primary" (click)="abrirNovo()">
+        <mat-icon>add</mat-icon>
+        Nova Disciplina
+      </button>
+    }
+  </div>
+
+  @if (loading()) {
+    <div class="loading-overlay">
+      <mat-spinner diameter="48"></mat-spinner>
+    </div>
+  }
+
+  @if (!loading() && disciplinas().length > 0) {
+    <table mat-table [dataSource]="disciplinas()">
+      <ng-container matColumnDef="id">
+        <th mat-header-cell *matHeaderCellDef>ID</th>
+        <td mat-cell *matCellDef="let d">{{ d.id }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="nome">
+        <th mat-header-cell *matHeaderCellDef>Nome</th>
+        <td mat-cell *matCellDef="let d">{{ d.nome }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="cargaHoraria">
+        <th mat-header-cell *matHeaderCellDef>Carga Horária</th>
+        <td mat-cell *matCellDef="let d">{{ d.cargaHoraria }}h</td>
+      </ng-container>
+
+      <ng-container matColumnDef="turma">
+        <th mat-header-cell *matHeaderCellDef>Turma</th>
+        <td mat-cell *matCellDef="let d">#{{ d.turmaId }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="professor">
+        <th mat-header-cell *matHeaderCellDef>Professor</th>
+        <td mat-cell *matCellDef="let d">
+          @if (d.professorLogin) {
+            <span>{{ d.professorLogin }}</span>
+          }
+          @if (!d.professorLogin) {
+            <span class="muted">Sem professor</span>
+          }
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="acoes">
+        <th mat-header-cell *matHeaderCellDef style="text-align:right;">Ações</th>
+        <td mat-cell *matCellDef="let d">
+          <div class="actions-cell">
+            <button mat-icon-button matTooltip="Detalhes" (click)="abrirDetalhe(d.id)">
+              <mat-icon>info</mat-icon>
+            </button>
+            @if (isSecretaria()) {
+              <button
+                mat-icon-button
+                color="primary"
+                matTooltip="Editar"
+                (click)="abrirEdicao(d.id)"
+              >
+                <mat-icon>edit</mat-icon>
+              </button>
+            }
+            @if (isSecretaria()) {
+              <button
+                mat-icon-button
+                color="warn"
+                matTooltip="Excluir"
+                (click)="excluir(d.id, d.nome)"
+              >
+                <mat-icon>delete</mat-icon>
+              </button>
+            }
+          </div>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+    </table>
+  }
+
+  @if (!loading() && disciplinas().length === 0) {
+    <div class="empty-state">
+      <mat-icon style="font-size:48px;width:48px;height:48px;">menu_book</mat-icon>
+      <p>Nenhuma disciplina cadastrada.</p>
+    </div>
+  }
+</div>
+
+@if (modalAtivo() === 'form') {
+  <app-disciplina-form
+    [disciplinaId]="disciplinaSelecionadaId()"
+    (close)="fecharModal()">
+  </app-disciplina-form>
+}

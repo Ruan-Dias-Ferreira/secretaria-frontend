@@ -1,7 +1,6 @@
-import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, OnDestroy, OnInit, Output } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Subject, takeUntil } from 'rxjs';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, inject, output, signal } from '@angular/core';
+import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -11,8 +10,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { DocumentoRequest } from '../../../../core/models/requests/documento.request';
-import { DocumentoService } from '../../services/documento.service';
-import { AlunoService } from '../../../alunos/services/aluno.service';
+import { DocumentoService } from '../../data-access/documento.service';
+import { AlunoService } from '../../../alunos/data-access/aluno.service';
 import { AlunoResponse } from '../../../../core/models/responses/aluno.response';
 import { TipoDocumento } from '../../../../core/models/enums/tipo-documento.enum';
 import { NotificationService } from '../../../../core/services/notification.service';
@@ -26,8 +25,8 @@ const TIPO_LABELS: Record<string, string> = {
 @Component({
   selector: 'app-documento-form',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    CommonModule,
     ReactiveFormsModule,
     MatFormFieldModule,
     MatInputModule,
@@ -56,62 +55,56 @@ const TIPO_LABELS: Record<string, string> = {
       padding: 8px 12px; font-size: 13px; margin-bottom: 16px; }
   `]
 })
-export class DocumentoFormComponent implements OnInit, OnDestroy {
+export class DocumentoFormComponent implements OnInit {
 
-  @Output() close = new EventEmitter<void>();
+  readonly close = output<void>();
 
-  form!: FormGroup;
-  loading = false;
+  private fb = inject(NonNullableFormBuilder);
+  private documentoService = inject(DocumentoService);
+  private alunoService = inject(AlunoService);
+  private notification = inject(NotificationService);
+  private destroyRef = inject(DestroyRef);
 
-  alunos: AlunoResponse[] = [];
+  protected loading = signal(false);
+  protected alunos = signal<AlunoResponse[]>([]);
   readonly tipoOptions = Object.values(TipoDocumento);
   readonly tipoLabels = TIPO_LABELS;
 
-  private destroy$ = new Subject<void>();
-
-  constructor(
-    private fb: FormBuilder,
-    private documentoService: DocumentoService,
-    private alunoService: AlunoService,
-    private notification: NotificationService
-  ) {}
+  form = this.fb.group({
+    alunoId: [null as unknown as number, [Validators.required]],
+    tipo:    [null as unknown as string, [Validators.required]]
+  });
 
   ngOnInit(): void {
-    this.form = this.fb.group({
-      alunoId: [null, [Validators.required]],
-      tipo:    [null, [Validators.required]]
-    });
     this.carregarAlunos();
   }
 
   private carregarAlunos(): void {
-    this.loading = true;
+    this.loading.set(true);
     this.alunoService.findAll()
-      .pipe(takeUntil(this.destroy$))
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: alunos => { this.alunos = alunos; this.loading = false; },
-        error: () => { this.loading = false; }
+        next: alunos => { this.alunos.set(alunos); this.loading.set(false); },
+        error: () => { this.loading.set(false); }
       });
   }
 
   onSubmit(): void {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
-    this.loading = true;
+    this.loading.set(true);
     const request = this.form.value as DocumentoRequest;
 
     this.documentoService.save(request)
-      .pipe(takeUntil(this.destroy$))
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
           this.notification.success('Documento emitido com sucesso.');
-          this.loading = false;
+          this.loading.set(false);
           this.close.emit();
         },
-        error: () => { this.loading = false; }
+        error: () => { this.loading.set(false); }
       });
   }
 
   cancelar(): void { this.close.emit(); }
-
-  ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
 }

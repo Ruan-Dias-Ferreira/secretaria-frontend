@@ -1,46 +1,54 @@
 <h2 mat-dialog-title>Frequência — Aluno #{{ data.alunoId }}</h2>
 <mat-dialog-content>
-  <div *ngIf="loading" class="loading">
-    <mat-spinner diameter="40"></mat-spinner>
-  </div>
+  @if (loading()) {
+    <div class="loading">
+      <mat-spinner diameter="40"></mat-spinner>
+    </div>
+  }
 
-  <div *ngIf="errorMsg" class="empty">{{ errorMsg }}</div>
+  @if (errorMsg()) {
+    <div class="empty">{{ errorMsg() }}</div>
+  }
 
-  <div *ngIf="!loading && frequencias.length === 0 && !errorMsg" class="empty">
-    Nenhum registro de frequência.
-  </div>
+  @if (!loading() && frequencias().length === 0 && !errorMsg()) {
+    <div class="empty">
+      Nenhum registro de frequência.
+    </div>
+  }
 
-  <table mat-table [dataSource]="frequencias" *ngIf="!loading && frequencias.length > 0">
-    <ng-container matColumnDef="disciplina">
-      <th mat-header-cell *matHeaderCellDef>Disciplina</th>
-      <td mat-cell *matCellDef="let f">{{ f.nomeDisciplina }}</td>
-    </ng-container>
+  @if (!loading() && frequencias().length > 0) {
+    <table mat-table [dataSource]="frequencias()">
+      <ng-container matColumnDef="disciplina">
+        <th mat-header-cell *matHeaderCellDef>Disciplina</th>
+        <td mat-cell *matCellDef="let f">{{ f.nomeDisciplina }}</td>
+      </ng-container>
 
-    <ng-container matColumnDef="cargaHoraria">
-      <th mat-header-cell *matHeaderCellDef>Carga Horária</th>
-      <td mat-cell *matCellDef="let f">{{ f.cargaHoraria }}h</td>
-    </ng-container>
+      <ng-container matColumnDef="cargaHoraria">
+        <th mat-header-cell *matHeaderCellDef>Carga Horária</th>
+        <td mat-cell *matCellDef="let f">{{ f.cargaHoraria }}h</td>
+      </ng-container>
 
-    <ng-container matColumnDef="presencas">
-      <th mat-header-cell *matHeaderCellDef>Presenças</th>
-      <td mat-cell *matCellDef="let f">{{ f.presencas }}</td>
-    </ng-container>
+      <ng-container matColumnDef="presencas">
+        <th mat-header-cell *matHeaderCellDef>Presenças</th>
+        <td mat-cell *matCellDef="let f">{{ f.presencas }}</td>
+      </ng-container>
 
-    <ng-container matColumnDef="percentual">
-      <th mat-header-cell *matHeaderCellDef>Percentual</th>
-      <td mat-cell *matCellDef="let f">{{ f.percentual }}%</td>
-    </ng-container>
+      <ng-container matColumnDef="percentual">
+        <th mat-header-cell *matHeaderCellDef>Percentual</th>
+        <td mat-cell *matCellDef="let f">{{ f.percentual }}%</td>
+      </ng-container>
 
-    <ng-container matColumnDef="situacao">
-      <th mat-header-cell *matHeaderCellDef>Situação</th>
-      <td mat-cell *matCellDef="let f">
-        <span [class]="badgeClass(f.situacao)">{{ f.situacao }}</span>
-      </td>
-    </ng-container>
+      <ng-container matColumnDef="situacao">
+        <th mat-header-cell *matHeaderCellDef>Situação</th>
+        <td mat-cell *matCellDef="let f">
+          <span [class]="badgeClass(f.situacao)">{{ f.situacao }}</span>
+        </td>
+      </ng-container>
 
-    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-    <tr mat-row *matRowDef="let r; columns: displayedColumns"></tr>
-  </table>
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let r; columns: displayedColumns"></tr>
+    </table>
+  }
 </mat-dialog-content>
 <mat-dialog-actions align="end">
   <button mat-button (click)="fechar()">Fechar</button>

@@ -9,34 +9,42 @@
 
     <p class="info-hint">A data de emissão será gerada automaticamente pelo servidor.</p>
 
-    <div *ngIf="loading" class="spinner-center">
-      <mat-spinner diameter="40"></mat-spinner>
-    </div>
-
-    <form [formGroup]="form" (ngSubmit)="onSubmit()" *ngIf="!loading">
-      <mat-form-field appearance="outline" style="width:100%">
-        <mat-label>Aluno</mat-label>
-        <mat-select formControlName="alunoId">
-          <mat-option *ngFor="let a of alunos" [value]="a.id">{{ a.nome }}</mat-option>
-        </mat-select>
-        <mat-error *ngIf="form.get('alunoId')?.hasError('required')">Selecione um aluno.</mat-error>
-      </mat-form-field>
-
-      <mat-form-field appearance="outline" style="width:100%; margin-top:8px;">
-        <mat-label>Tipo de Documento</mat-label>
-        <mat-select formControlName="tipo">
-          <mat-option *ngFor="let t of tipoOptions" [value]="t">{{ tipoLabels[t] }}</mat-option>
-        </mat-select>
-        <mat-error *ngIf="form.get('tipo')?.hasError('required')">Selecione o tipo de documento.</mat-error>
-      </mat-form-field>
-
-      <div class="dialog-actions">
-        <button type="button" mat-button (click)="cancelar()">Cancelar</button>
-        <button type="submit" mat-flat-button color="primary" [disabled]="loading">
-          <mat-icon>description</mat-icon>
-          Emitir
-        </button>
+    @if (loading()) {
+      <div class="spinner-center">
+        <mat-spinner diameter="40"></mat-spinner>
       </div>
-    </form>
+    }
+
+    @if (!loading()) {
+      <form [formGroup]="form" (ngSubmit)="onSubmit()">
+        <mat-form-field appearance="outline" style="width:100%">
+          <mat-label>Aluno</mat-label>
+          <mat-select formControlName="alunoId">
+            @for (a of alunos(); track a.id) {
+              <mat-option [value]="a.id">{{ a.nome }}</mat-option>
+            }
+          </mat-select>
+          @if (form.get('alunoId')?.hasError('required')) { <mat-error>Selecione um aluno.</mat-error> }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" style="width:100%; margin-top:8px;">
+          <mat-label>Tipo de Documento</mat-label>
+          <mat-select formControlName="tipo">
+            @for (t of tipoOptions; track t) {
+              <mat-option [value]="t">{{ tipoLabels[t] }}</mat-option>
+            }
+          </mat-select>
+          @if (form.get('tipo')?.hasError('required')) { <mat-error>Selecione o tipo de documento.</mat-error> }
+        </mat-form-field>
+
+        <div class="dialog-actions">
+          <button type="button" mat-button (click)="cancelar()">Cancelar</button>
+          <button type="submit" mat-flat-button color="primary" [disabled]="loading()">
+            <mat-icon>description</mat-icon>
+            Emitir
+          </button>
+        </div>
+      </form>
+    }
   </div>
 </div>

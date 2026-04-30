@@ -9,7 +9,7 @@ const both = { canActivate: [roleGuard], data: { roles: [Role.SECRETARIA, Role.P
 const placeholder = (title: string) => ({
   data: { title },
   loadComponent: () =>
-    import('./shared/components/placeholder-page/placeholder-page.component')
+    import('./shared/ui/placeholder-page/placeholder-page.component')
       .then(m => m.PlaceholderPageComponent),
 });
 
@@ -20,19 +20,19 @@ export const routes: Routes = [
   {
     path: 'auth/login',
     loadComponent: () =>
-      import('./features/auth/components/login/login.component').then(m => m.LoginComponent),
+      import('./features/auth/pages/login/login.component').then(m => m.LoginComponent),
   },
   {
     path: 'unauthorized',
     loadComponent: () =>
-      import('./shared/components/unauthorized-page/unauthorized-page.component')
+      import('./shared/ui/unauthorized-page/unauthorized-page.component')
         .then(m => m.UnauthorizedPageComponent),
   },
   {
     path: '',
     canActivate: [authGuard],
     loadComponent: () =>
-      import('./shared/components/main-layout/main-layout.component')
+      import('./shared/ui/main-layout/main-layout.component')
         .then(m => m.MainLayoutComponent),
     children: [
 
@@ -40,7 +40,7 @@ export const routes: Routes = [
       {
         path: 'dashboard',
         loadComponent: () =>
-          import('./features/dashboard/components/home/home.component')
+          import('./features/dashboard/pages/home/home.component')
             .then(m => m.HomeComponent),
       },
 
@@ -48,7 +48,7 @@ export const routes: Routes = [
       {
         path: 'alunos', ...both,
         loadComponent: () =>
-          import('./features/alunos/components/aluno-list/aluno-list.component')
+          import('./features/alunos/pages/aluno-list/aluno-list.component')
             .then(m => m.AlunoListComponent),
       },
 
@@ -57,43 +57,43 @@ export const routes: Routes = [
       {
         path: 'matriculas/nova', ...sec,
         loadComponent: () =>
-          import('./features/matriculas/components/matricula-form/matricula-form.component')
+          import('./features/matriculas/pages/matricula-form/matricula-form.component')
             .then(m => m.MatriculaFormComponent),
       },
       {
         path: 'matriculas/consultar', ...sec,
         loadComponent: () =>
-          import('./features/matriculas/components/matricula-list/matricula-list.component')
+          import('./features/matriculas/pages/matricula-list/matricula-list.component')
             .then(m => m.MatriculaListComponent),
       },
       {
         path: 'matriculas/rematricula', ...sec,
         loadComponent: () =>
-          import('./features/matriculas/components/matricula-rematricula/matricula-rematricula.component')
+          import('./features/matriculas/pages/matricula-rematricula/matricula-rematricula.component')
             .then(m => m.MatriculaRematriculaComponent),
       },
       {
         path: 'matriculas/rematricula/atualizar/:id', ...sec,
         loadComponent: () =>
-          import('./features/matriculas/components/matricula-atualizar-dados/matricula-atualizar-dados.component')
+          import('./features/matriculas/pages/matricula-atualizar-dados/matricula-atualizar-dados.component')
             .then(m => m.MatriculaAtualizarDadosComponent),
       },
       {
         path: 'matriculas/transferencia', ...sec,
         loadComponent: () =>
-          import('./features/matriculas/components/matricula-transferencia/matricula-transferencia.component')
+          import('./features/matriculas/pages/matricula-transferencia/matricula-transferencia.component')
             .then(m => m.MatriculaTransferenciaComponent),
       },
       {
         path: 'matriculas/cancelar', ...sec,
         loadComponent: () =>
-          import('./features/matriculas/components/matricula-cancelar/matricula-cancelar.component')
+          import('./features/matriculas/pages/matricula-cancelar/matricula-cancelar.component')
             .then(m => m.MatriculaCancelarComponent),
       },
       {
         path: 'matriculas/pendencias', ...sec,
         loadComponent: () =>
-          import('./features/matriculas/components/matricula-pendencias/matricula-pendencias.component')
+          import('./features/matriculas/pages/matricula-pendencias/matricula-pendencias.component')
             .then(m => m.MatriculaPendenciasComponent),
       },
 
@@ -101,37 +101,37 @@ export const routes: Routes = [
       {
         path: 'turmas', ...sec,
         loadComponent: () =>
-          import('./features/turmas/components/turma-list/turma-list.component')
+          import('./features/turmas/pages/turma-list/turma-list.component')
             .then(m => m.TurmaListComponent),
       },
       {
         path: 'disciplinas', ...both,
         loadComponent: () =>
-          import('./features/disciplinas/components/disciplina-list/disciplina-list.component')
+          import('./features/disciplinas/pages/disciplina-list/disciplina-list.component')
             .then(m => m.DisciplinaListComponent),
       },
       {
         path: 'notas', ...both,
         loadComponent: () =>
-          import('./features/notas/components/nota-list/nota-list.component')
+          import('./features/notas/pages/nota-list/nota-list.component')
             .then(m => m.NotaListComponent),
       },
       {
         path: 'frequencias', ...both,
         loadComponent: () =>
-          import('./features/frequencias/components/frequencia-list/frequencia-list.component')
+          import('./features/frequencias/pages/frequencia-list/frequencia-list.component')
             .then(m => m.FrequenciaListComponent),
       },
       {
         path: 'documentos', ...sec,
         loadComponent: () =>
-          import('./features/documentos/components/documento-list/documento-list.component')
+          import('./features/documentos/pages/documento-list/documento-list.component')
             .then(m => m.DocumentoListComponent),
       },
       {
         path: 'usuarios', ...sec,
         loadComponent: () =>
-          import('./features/usuarios/components/usuario-list/usuario-list.component')
+          import('./features/usuarios/pages/usuario-list/usuario-list.component')
             .then(m => m.UsuarioListComponent),
       },
 

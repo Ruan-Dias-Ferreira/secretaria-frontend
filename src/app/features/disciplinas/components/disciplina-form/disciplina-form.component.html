@@ -7,49 +7,65 @@
       </button>
     </div>
 
-    <form [formGroup]="form" (ngSubmit)="onSubmit()" *ngIf="form">
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
       <div class="form-grid">
         <mat-form-field appearance="outline" class="full">
           <mat-label>Nome</mat-label>
           <input matInput formControlName="nome" />
-          <mat-error *ngIf="form.get('nome')?.hasError('required')">Nome é obrigatório.</mat-error>
-          <mat-error *ngIf="form.get('nome')?.hasError('minlength')">Mínimo 2 caracteres.</mat-error>
+          @if (form.get('nome')?.hasError('required')) {
+            <mat-error>Nome é obrigatório.</mat-error>
+          }
+          @if (form.get('nome')?.hasError('minlength')) {
+            <mat-error>Mínimo 2 caracteres.</mat-error>
+          }
         </mat-form-field>
 
         <mat-form-field appearance="outline">
           <mat-label>Carga Horária (h)</mat-label>
           <input matInput type="number" formControlName="cargaHoraria" />
-          <mat-error *ngIf="form.get('cargaHoraria')?.invalid">Informe carga horária válida.</mat-error>
+          @if (form.get('cargaHoraria')?.invalid) {
+            <mat-error>Informe carga horária válida.</mat-error>
+          }
         </mat-form-field>
 
         <mat-form-field appearance="outline">
           <mat-label>Turma</mat-label>
           <mat-select formControlName="turmaId">
-            <mat-option *ngFor="let t of turmas" [value]="t.id">
-              {{ t.nome }} ({{ t.anoLetivo }} - {{ t.turno }})
-            </mat-option>
+            @for (t of turmas(); track t.id) {
+              <mat-option [value]="t.id">
+                {{ t.nome }} ({{ t.anoLetivo }} - {{ t.turno }})
+              </mat-option>
+            }
           </mat-select>
-          <mat-error *ngIf="form.get('turmaId')?.hasError('required')">Selecione uma turma.</mat-error>
+          @if (form.get('turmaId')?.hasError('required')) {
+            <mat-error>Selecione uma turma.</mat-error>
+          }
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="full">
           <mat-label>Professor (opcional)</mat-label>
           <mat-select formControlName="professorId">
             <mat-option [value]="null">Sem professor</mat-option>
-            <mat-option *ngFor="let p of professores" [value]="p.id">
-              {{ p.login }}
-            </mat-option>
+            @for (p of professores(); track p.id) {
+              <mat-option [value]="p.id">
+                {{ p.login }}
+              </mat-option>
+            }
           </mat-select>
         </mat-form-field>
       </div>
 
       <div class="actions">
         <button type="button" mat-button (click)="cancelar()">Cancelar</button>
-        <button type="submit" mat-flat-button color="primary" [disabled]="loading">
-          <span *ngIf="!loading">{{ isEdicao ? 'Atualizar' : 'Salvar' }}</span>
-          <span *ngIf="loading" class="loading-inline">
-            <mat-spinner diameter="18"></mat-spinner> Salvando...
-          </span>
+        <button type="submit" mat-flat-button color="primary" [disabled]="loading()">
+          @if (!loading()) {
+            <span>{{ isEdicao ? 'Atualizar' : 'Salvar' }}</span>
+          }
+          @if (loading()) {
+            <span class="loading-inline">
+              <mat-spinner diameter="18"></mat-spinner> Salvando...
+            </span>
+          }
         </button>
       </div>
     </form>

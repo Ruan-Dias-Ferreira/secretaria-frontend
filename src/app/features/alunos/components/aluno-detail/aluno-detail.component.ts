@@ -1,19 +1,19 @@
-import { Component, Inject, OnDestroy, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { Subject, takeUntil } from 'rxjs';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { AlunoResponse } from '../../../../core/models/responses/aluno.response';
-import { AlunoService } from '../../services/aluno.service';
+import { AlunoService } from '../../data-access/aluno.service';
 
 export interface AlunoDetailData { alunoId: number; }
 
 @Component({
   selector: 'app-aluno-detail',
   standalone: true,
-  imports: [CommonModule, MatDialogModule, MatButtonModule, MatProgressSpinnerModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [MatDialogModule, MatButtonModule, MatProgressSpinnerModule],
   templateUrl: './aluno-detail.component.html',
   styles: [`
     mat-dialog-content { min-width: 360px; }
@@ -30,31 +30,25 @@ export interface AlunoDetailData { alunoId: number; }
     .error { color: var(--mat-sys-error); padding: 16px 0; text-align: center; }
   `]
 })
-export class AlunoDetailComponent implements OnInit, OnDestroy {
+export class AlunoDetailComponent {
 
-  aluno: AlunoResponse | null = null;
-  loading = false;
-  errorMsg = '';
+  protected aluno = signal<AlunoResponse | null>(null);
+  protected loading = signal(false);
+  protected errorMsg = signal('');
 
-  private destroy$ = new Subject<void>();
+  private alunoService = inject(AlunoService);
+  private dialogRef = inject(MatDialogRef<AlunoDetailComponent>);
+  protected data = inject(MAT_DIALOG_DATA) as AlunoDetailData;
 
-  constructor(
-    private alunoService: AlunoService,
-    private dialogRef: MatDialogRef<AlunoDetailComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: AlunoDetailData
-  ) {}
-
-  ngOnInit(): void {
-    this.loading = true;
+  constructor() {
+    this.loading.set(true);
     this.alunoService.findById(this.data.alunoId)
-      .pipe(takeUntil(this.destroy$))
+      .pipe(takeUntilDestroyed())
       .subscribe({
-        next: a => { this.aluno = a; this.loading = false; },
-        error: () => { this.errorMsg = 'Erro ao carregar aluno.'; this.loading = false; }
+        next: a => { this.aluno.set(a); this.loading.set(false); },
+        error: () => { this.errorMsg.set('Erro ao carregar aluno.'); this.loading.set(false); }
       });
   }
 
   fechar(): void { this.dialogRef.close(); }
-
-  ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
 }

@@ -1,5 +1,5 @@
 // src/app/core/services/auth.service.ts
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, tap } from 'rxjs';
 import { jwtDecode } from 'jwt-decode';
@@ -22,12 +22,12 @@ export class AuthService {
   private readonly TOKEN_KEY = 'auth_token';
   private readonly apiUrl = `${environment.apiUrl}/auth`;
 
+  private http = inject(HttpClient);
+
   private currentUserSubject = new BehaviorSubject<UsuarioResponse | null>(
     this.getUserFromToken()
   );
   currentUser$ = this.currentUserSubject.asObservable();
-
-  constructor(private http: HttpClient) {}
 
   login(credentials: LoginRequest): Observable<string> {
     return this.http.post(`${this.apiUrl}/login`, credentials, { responseType: 'text' }).pipe(

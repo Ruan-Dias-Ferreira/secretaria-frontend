@@ -1,24 +1,31 @@
 <h2 mat-dialog-title>Detalhes da Disciplina</h2>
 <mat-dialog-content>
-  <div *ngIf="loading" class="loading">
-    <mat-spinner diameter="40"></mat-spinner>
-  </div>
+  @if (loading) {
+    <div class="loading">
+      <mat-spinner diameter="40"></mat-spinner>
+    </div>
+  }
 
-  <dl *ngIf="!loading && disciplina">
-    <dt>ID</dt><dd>{{ disciplina.id }}</dd>
-    <dt>Nome</dt><dd>{{ disciplina.nome }}</dd>
-    <dt>Carga Horária</dt><dd>{{ disciplina.cargaHoraria }}h</dd>
-    <dt>Turma (ID)</dt><dd>#{{ disciplina.turmaId }}</dd>
-    <dt>Professor</dt>
-    <dd>
-      <span *ngIf="disciplina.professorLogin">
-        {{ disciplina.professorLogin }} (#{{ disciplina.professorId }})
-      </span>
-      <span *ngIf="!disciplina.professorLogin" class="muted">Sem professor vinculado</span>
-    </dd>
-  </dl>
+  @if (!loading && disciplina) {
+    <dl>
+      <dt>ID</dt><dd>{{ disciplina.id }}</dd>
+      <dt>Nome</dt><dd>{{ disciplina.nome }}</dd>
+      <dt>Carga Horária</dt><dd>{{ disciplina.cargaHoraria }}h</dd>
+      <dt>Turma (ID)</dt><dd>#{{ disciplina.turmaId }}</dd>
+      <dt>Professor</dt>
+      <dd>
+        @if (disciplina.professorLogin) {
+          {{ disciplina.professorLogin }} (#{{ disciplina.professorId }})
+        } @else {
+          <span class="muted">Sem professor vinculado</span>
+        }
+      </dd>
+    </dl>
+  }
 
-  <p *ngIf="errorMsg" class="error">{{ errorMsg }}</p>
+  @if (errorMsg) {
+    <p class="error">{{ errorMsg }}</p>
+  }
 </mat-dialog-content>
 <mat-dialog-actions align="end">
   <button mat-button (click)="fechar()">Fechar</button>

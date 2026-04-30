@@ -1,58 +1,66 @@
 <h2 mat-dialog-title>Boletim — Aluno #{{ data.alunoId }}</h2>
 <mat-dialog-content>
-  <div *ngIf="loading" class="loading">
-    <mat-spinner diameter="40"></mat-spinner>
-  </div>
+  @if (loading()) {
+    <div class="loading">
+      <mat-spinner diameter="40"></mat-spinner>
+    </div>
+  }
 
-  <div *ngIf="errorMsg" class="empty">{{ errorMsg }}</div>
+  @if (errorMsg()) {
+    <div class="empty">{{ errorMsg() }}</div>
+  }
 
-  <div *ngIf="!loading && boletim.length === 0 && !errorMsg" class="empty">
-    Aluno sem notas cadastradas.
-  </div>
+  @if (!loading() && boletim().length === 0 && !errorMsg()) {
+    <div class="empty">
+      Aluno sem notas cadastradas.
+    </div>
+  }
 
-  <table mat-table [dataSource]="boletim" *ngIf="!loading && boletim.length > 0">
-    <ng-container matColumnDef="disciplina">
-      <th mat-header-cell *matHeaderCellDef>Disciplina</th>
-      <td mat-cell *matCellDef="let i">{{ i.nomeDisciplina }}</td>
-    </ng-container>
+  @if (!loading() && boletim().length > 0) {
+    <table mat-table [dataSource]="boletim()">
+      <ng-container matColumnDef="disciplina">
+        <th mat-header-cell *matHeaderCellDef>Disciplina</th>
+        <td mat-cell *matCellDef="let i">{{ i.nomeDisciplina }}</td>
+      </ng-container>
 
-    <ng-container matColumnDef="b1">
-      <th mat-header-cell *matHeaderCellDef>1º Bim</th>
-      <td mat-cell *matCellDef="let i">{{ notaPorBimestre(i, 1) ?? '—' }}</td>
-    </ng-container>
+      <ng-container matColumnDef="b1">
+        <th mat-header-cell *matHeaderCellDef>1º Bim</th>
+        <td mat-cell *matCellDef="let i">{{ notaPorBimestre(i, 1) ?? '—' }}</td>
+      </ng-container>
 
-    <ng-container matColumnDef="b2">
-      <th mat-header-cell *matHeaderCellDef>2º Bim</th>
-      <td mat-cell *matCellDef="let i">{{ notaPorBimestre(i, 2) ?? '—' }}</td>
-    </ng-container>
+      <ng-container matColumnDef="b2">
+        <th mat-header-cell *matHeaderCellDef>2º Bim</th>
+        <td mat-cell *matCellDef="let i">{{ notaPorBimestre(i, 2) ?? '—' }}</td>
+      </ng-container>
 
-    <ng-container matColumnDef="b3">
-      <th mat-header-cell *matHeaderCellDef>3º Bim</th>
-      <td mat-cell *matCellDef="let i">{{ notaPorBimestre(i, 3) ?? '—' }}</td>
-    </ng-container>
+      <ng-container matColumnDef="b3">
+        <th mat-header-cell *matHeaderCellDef>3º Bim</th>
+        <td mat-cell *matCellDef="let i">{{ notaPorBimestre(i, 3) ?? '—' }}</td>
+      </ng-container>
 
-    <ng-container matColumnDef="b4">
-      <th mat-header-cell *matHeaderCellDef>4º Bim</th>
-      <td mat-cell *matCellDef="let i">{{ notaPorBimestre(i, 4) ?? '—' }}</td>
-    </ng-container>
+      <ng-container matColumnDef="b4">
+        <th mat-header-cell *matHeaderCellDef>4º Bim</th>
+        <td mat-cell *matCellDef="let i">{{ notaPorBimestre(i, 4) ?? '—' }}</td>
+      </ng-container>
 
-    <ng-container matColumnDef="media">
-      <th mat-header-cell *matHeaderCellDef>Média</th>
-      <td mat-cell *matCellDef="let i">
-        <strong>{{ i.mediaNotaDisciplina | number:'1.2-2' }}</strong>
-      </td>
-    </ng-container>
+      <ng-container matColumnDef="media">
+        <th mat-header-cell *matHeaderCellDef>Média</th>
+        <td mat-cell *matCellDef="let i">
+          <strong>{{ i.mediaNotaDisciplina | number:'1.2-2' }}</strong>
+        </td>
+      </ng-container>
 
-    <ng-container matColumnDef="situacao">
-      <th mat-header-cell *matHeaderCellDef>Situação</th>
-      <td mat-cell *matCellDef="let i">
-        <span [class]="badgeClass(i.situacaoNota)">{{ i.situacaoNota }}</span>
-      </td>
-    </ng-container>
+      <ng-container matColumnDef="situacao">
+        <th mat-header-cell *matHeaderCellDef>Situação</th>
+        <td mat-cell *matCellDef="let i">
+          <span [class]="badgeClass(i.situacaoNota)">{{ i.situacaoNota }}</span>
+        </td>
+      </ng-container>
 
-    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-    <tr mat-row *matRowDef="let r; columns: displayedColumns"></tr>
-  </table>
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let r; columns: displayedColumns"></tr>
+    </table>
+  }
 </mat-dialog-content>
 <mat-dialog-actions align="end">
   <button mat-button (click)="fechar()">Fechar</button>

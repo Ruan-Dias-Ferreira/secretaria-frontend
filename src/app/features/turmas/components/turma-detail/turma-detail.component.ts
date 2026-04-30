@@ -6,7 +6,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { TurmaResponse } from '../../../../core/models/responses/turma.response';
-import { TurmaService } from '../../services/turma.service';
+import { TurmaService } from '../../data-access/turma.service';
 
 export interface TurmaDetailData { turmaId: number; }
 

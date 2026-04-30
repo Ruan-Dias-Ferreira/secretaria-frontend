@@ -1,6 +1,5 @@
-import { Component, Inject, OnDestroy, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { Subject, takeUntil } from 'rxjs';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTableModule } from '@angular/material/table';
@@ -8,15 +7,15 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { FrequenciaResumoResponse } from '../../../../core/models/responses/frequencia-resumo.response';
 import { SituacaoFrequencia } from '../../../../core/models/enums/situacao-frequencia.enum';
-import { AlunoService } from '../../services/aluno.service';
+import { AlunoService } from '../../data-access/aluno.service';
 
 export interface FrequenciaDialogData { alunoId: number; }
 
 @Component({
   selector: 'app-frequencia-modal',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    CommonModule,
     MatDialogModule,
     MatButtonModule,
     MatTableModule,
@@ -35,29 +34,25 @@ export interface FrequenciaDialogData { alunoId: number; }
     .badge-reprovado { background: #fee2e2; color: #991b1b; }
   `]
 })
-export class FrequenciaModalComponent implements OnInit, OnDestroy {
+export class FrequenciaModalComponent {
 
-  frequencias: FrequenciaResumoResponse[] = [];
-  loading = false;
-  errorMsg = '';
+  protected frequencias = signal<FrequenciaResumoResponse[]>([]);
+  protected loading = signal(false);
+  protected errorMsg = signal('');
 
   readonly displayedColumns = ['disciplina', 'cargaHoraria', 'presencas', 'percentual', 'situacao'];
 
-  private destroy$ = new Subject<void>();
+  private alunoService = inject(AlunoService);
+  private dialogRef = inject(MatDialogRef<FrequenciaModalComponent>);
+  protected data = inject(MAT_DIALOG_DATA) as FrequenciaDialogData;
 
-  constructor(
-    private alunoService: AlunoService,
-    private dialogRef: MatDialogRef<FrequenciaModalComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: FrequenciaDialogData
-  ) {}
-
-  ngOnInit(): void {
-    this.loading = true;
+  constructor() {
+    this.loading.set(true);
     this.alunoService.getFrequencias(this.data.alunoId)
-      .pipe(takeUntil(this.destroy$))
+      .pipe(takeUntilDestroyed())
       .subscribe({
-        next: d => { this.frequencias = d; this.loading = false; },
-        error: () => { this.errorMsg = 'Erro ao carregar frequências.'; this.loading = false; }
+        next: d => { this.frequencias.set(d); this.loading.set(false); },
+        error: () => { this.errorMsg.set('Erro ao carregar frequências.'); this.loading.set(false); }
       });
   }
 
@@ -68,6 +63,4 @@ export class FrequenciaModalComponent implements OnInit, OnDestroy {
   }
 
   fechar(): void { this.dialogRef.close(); }
-
-  ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
 }
