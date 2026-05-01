@@ -32,7 +32,7 @@
           <mat-label>Turma destino</mat-label>
           <mat-select formControlName="turmaId">
             @for (t of turmas(); track t.id) {
-              @if (t.anoLetivo === anoDestino()) {
+              @if (t.anoLetivo === anoDestino() && t.rematricula) {
                 <mat-option [value]="t.id">{{ t.nome }}</mat-option>
               }
             }

@@ -91,7 +91,7 @@ export class NotaFormComponent implements OnInit {
       .subscribe({
         next: ({ alunos, disciplinas }) => {
           this.alunos.set(alunos);
-          this.disciplinas.set(disciplinas);
+          this.disciplinas.set(disciplinas.filter(d => d.turmaOperavel !== false));
           const id = this.notaId();
           if (id !== null) {
             this.carregarNota(id);

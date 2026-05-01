@@ -11,8 +11,8 @@
       <div class="stat-value">{{ stats().total }}</div>
       <div class="stat-label">Total</div>
     </div>
-    <div class="stat-card green" [class.active]="filtroAtivo() === StatusMatricula.ATIVO"
-         (click)="toggleFiltro(StatusMatricula.ATIVO)">
+    <div class="stat-card green" [class.active]="filtroAtivo() === StatusMatricula.ATIVA"
+         (click)="toggleFiltro(StatusMatricula.ATIVA)">
       <div class="stat-value">{{ stats().ativas }}</div>
       <div class="stat-label">Ativas</div>
     </div>

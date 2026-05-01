@@ -16,8 +16,10 @@ import { FrequenciaService } from '../../data-access/frequencia.service';
 import { FrequenciaRequest, MotivoFalta } from '../../../../core/models/requests/frequencia.request';
 import { FrequenciaResponse } from '../../../../core/models/responses/frequencia.response';
 import { NotificationService } from '../../../../core/services/notification.service';
+import { AnoLetivoService } from '../../../../core/services/ano-letivo.service';
 import { TurmaResponse } from '../../../../core/models/responses/turma.response';
 import { AlunoResponse } from '../../../../core/models/responses/aluno.response';
+import { StatusMatricula } from '../../../../core/models/enums/status-matricula.enum';
 
 type StatusKey = 'PRESENTE' | 'FALTOU' | 'OUTRO';
 
@@ -47,12 +49,30 @@ export class InserirFrequenciaComponent implements OnInit {
   private eventoSvc = inject(EventoService);
   private frequenciaSvc = inject(FrequenciaService);
   private notify = inject(NotificationService);
+  private anoSvc = inject(AnoLetivoService);
   private destroyRef = inject(DestroyRef);
 
   protected eventos = signal<EventoResponse[]>([]);
 
   protected dataInvalida = computed(() => this.motivoDataBloqueada(this.data()));
-  protected anoBloqueado = computed(() => this.anoLetivoEncerrado(this.data()));
+  protected anoStatus = this.anoSvc.status;
+  protected anoBloqueado = computed(() => !this.anoSvc.emAndamento());
+  protected dataMin = computed(() => {
+    const a = this.anoSvc.ano(); const s = this.anoSvc.semestre();
+    return s === 1 ? `${a}-01-01` : `${a}-07-01`;
+  });
+  protected dataMax = computed(() => {
+    const a = this.anoSvc.ano(); const s = this.anoSvc.semestre();
+    const fimSemestre = s === 1 ? `${a}-06-30` : `${a}-12-31`;
+    const hojeIso = new Date().toISOString().slice(0, 10);
+    return hojeIso < fimSemestre ? hojeIso : fimSemestre;
+  });
+  protected msgAnoBloqueado = computed(() => {
+    const s = this.anoSvc.status();
+    if (s === 'PASSADO') return `Ano letivo ${this.anoSvc.ano()} (${this.anoSvc.semestre()}º sem) já encerrado. Frequência só pode ser consultada.`;
+    if (s === 'FUTURO') return `Ano letivo ${this.anoSvc.ano()} (${this.anoSvc.semestre()}º sem) ainda não iniciou. Selecione um período em andamento.`;
+    return null;
+  });
 
   protected turmas = signal<TurmaResponse[]>([]);
   protected turmaId = signal<number | null>(null);
@@ -87,11 +107,12 @@ export class InserirFrequenciaComponent implements OnInit {
   protected resumo = computed(() => {
     const ls = this.linhas();
     const presentes = ls.filter(l => l.status === 'PRESENTE').length;
-    const justificadas = ls.filter(l => l.status === 'OUTRO').length;
+    const dispensados = ls.filter(l => l.status === 'OUTRO' && l.opcaoCustomId === 'dispensado').length;
+    const justificadas = ls.filter(l => l.status === 'OUTRO' && l.opcaoCustomId !== 'dispensado').length;
     const faltasSimples = ls.filter(l => l.status === 'FALTOU').length;
     const faltas = faltasSimples + justificadas;
-    const pendentes = ls.length - presentes - faltas;
-    return { total: ls.length, presentes, faltas, justificadas, pendentes };
+    const pendentes = ls.length - presentes - faltas - dispensados;
+    return { total: ls.length, presentes, faltas, justificadas, dispensados, pendentes };
   });
 
   ngOnInit(): void {
@@ -99,7 +120,7 @@ export class InserirFrequenciaComponent implements OnInit {
     this.turmaSvc.findAll()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: ts => { this.turmas.set(ts); this.loadingTurmas.set(false); },
+        next: ts => { this.turmas.set(ts.filter(t => t.operavel)); this.loadingTurmas.set(false); },
         error: () => { this.loadingTurmas.set(false); }
       });
 
@@ -111,18 +132,25 @@ export class InserirFrequenciaComponent implements OnInit {
       });
   }
 
-  // True se data pertence a ano letivo encerrado (ano anterior ao corrente).
-  anoLetivoEncerrado(iso: string): boolean {
-    if (!iso) return false;
-    const ano = Number(iso.slice(0, 4));
-    return ano < new Date().getFullYear();
-  }
-
-  // Retorna mensagem se data bloqueada (sábado, domingo ou evento). Null se válida.
+  // Retorna mensagem se data bloqueada (fora do ano letivo, futura, fim de semana ou evento). Null se válida.
   motivoDataBloqueada(iso: string): string | null {
     if (!iso) return null;
     const [y, m, d] = iso.split('-').map(Number);
     const dt = new Date(y, m - 1, d);
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+    const anoSel = this.anoSvc.ano();
+    const semSel = this.anoSvc.semestre();
+    if (y !== anoSel) {
+      return `Data fora do ano letivo selecionado (${anoSel}). Troque o ano no topo ou ajuste a data.`;
+    }
+    const semDoMes: 1 | 2 = m <= 6 ? 1 : 2;
+    if (semDoMes !== semSel) {
+      return `Data fora do ${semSel}º semestre de ${anoSel}. Troque o semestre no topo ou ajuste a data.`;
+    }
+    if (dt.getTime() > hoje.getTime()) {
+      return 'Data futura: frequência só pode ser lançada para hoje ou datas passadas.';
+    }
     const dow = dt.getDay();
     if (dow === 0) return 'Domingo: dia não letivo.';
     if (dow === 6) return 'Sábado: dia não letivo.';
@@ -135,7 +163,7 @@ export class InserirFrequenciaComponent implements OnInit {
   }
 
   onDataChange(): void {
-    if (this.motivoDataBloqueada(this.data()) || this.anoLetivoEncerrado(this.data())) {
+    if (this.motivoDataBloqueada(this.data()) || this.anoBloqueado()) {
       this.linhas.set([]);
       return;
     }
@@ -148,7 +176,7 @@ export class InserirFrequenciaComponent implements OnInit {
     const tid = this.turmaId();
     if (tid == null) { this.linhas.set([]); return; }
     if (this.motivoDataBloqueada(this.data())) { this.linhas.set([]); return; }
-    if (this.anoLetivoEncerrado(this.data())) { this.linhas.set([]); return; }
+    if (this.anoBloqueado()) { this.linhas.set([]); return; }
     this.loadingAlunos.set(true);
 
     forkJoin({
@@ -160,7 +188,9 @@ export class InserirFrequenciaComponent implements OnInit {
       .subscribe({
         next: ({ matriculas, alunos, salvas }) => {
           const idsTurma = new Set(
-            matriculas.filter(m => m.turmaId === tid).map(m => m.alunoId)
+            matriculas
+              .filter(m => m.turmaId === tid && m.status === StatusMatricula.ATIVA)
+              .map(m => m.alunoId)
           );
           const mapaSalvas = new Map<number, FrequenciaResponse>(
             salvas.map(f => [f.alunoId, f])
@@ -268,7 +298,7 @@ export class InserirFrequenciaComponent implements OnInit {
       return;
     }
     if (this.anoBloqueado()) {
-      this.notify.error('Ano letivo encerrado. Não é possível editar frequência.');
+      this.notify.error(this.msgAnoBloqueado() ?? 'Ano letivo fora de andamento.');
       return;
     }
     const pendentes = this.linhas().filter(l => l.status === null);

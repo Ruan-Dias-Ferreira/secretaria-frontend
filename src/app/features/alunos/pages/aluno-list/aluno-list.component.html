@@ -1,6 +1,39 @@
 <div class="page-container">
   <div class="page-header">
     <h1>Alunos</h1>
+  </div>
+
+  <div class="search-bar">
+    <mat-form-field appearance="outline">
+      <mat-label>Pesquisar aluno</mat-label>
+      <input
+        matInput
+        [ngModel]="termoBusca()"
+        (ngModelChange)="termoBusca.set($event)"
+        (keyup.enter)="buscar()"
+        placeholder="Nome, CPF ou email"
+      />
+      <button
+        mat-icon-button
+        matSuffix
+        matTooltip="Buscar"
+        (click)="buscar()"
+      >
+        <mat-icon>search</mat-icon>
+      </button>
+    </mat-form-field>
+    @if (buscaRealizada()) {
+      <button
+        mat-stroked-button
+        (click)="limparBusca()"
+      >
+        <mat-icon>close</mat-icon>
+        Limpar
+      </button>
+    }
+  </div>
+
+  <div class="actions-row">
     @if (isSecretaria()) {
       <button
         mat-flat-button
@@ -8,7 +41,7 @@
         (click)="abrirNovo()"
       >
         <mat-icon>add</mat-icon>
-        Novo Aluno
+        Cadastrar novo aluno
       </button>
     }
   </div>
@@ -19,7 +52,7 @@
     </div>
   }
 
-  @if (!loading() && alunos().length > 0) {
+  @if (!loading() && buscaRealizada() && alunos().length > 0) {
     <table
       mat-table
       [dataSource]="alunos()"
@@ -86,17 +119,11 @@
     </table>
   }
 
-  @if (!loading() && alunos().length === 0) {
+  @if (!loading() && buscaRealizada() && alunos().length === 0) {
     <div class="empty-state">
       <mat-icon style="font-size:48px;width:48px;height:48px;">people_outline</mat-icon>
-      <p>Nenhum aluno cadastrado.</p>
+      <p>Nenhum aluno encontrado.</p>
     </div>
   }
 </div>
 
-@if (modalAtivo() === 'form') {
-  <app-aluno-form
-    [alunoId]="alunoSelecionadoId()"
-    (close)="fecharModal()"
-  ></app-aluno-form>
-}

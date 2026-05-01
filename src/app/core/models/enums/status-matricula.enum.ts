@@ -1,5 +1,5 @@
 export enum StatusMatricula {
-  ATIVO = 'ATIVO',
+  ATIVA = 'ATIVA',
   DESISTENTE = 'DESISTENTE',
   TRANSFERIDO = 'TRANSFERIDO',
   CONCLUIDA = 'CONCLUIDA'

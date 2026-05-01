@@ -1,5 +1,7 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 
 import { MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
@@ -7,6 +9,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
 
 import { AlunoResponse } from '../../../../core/models/responses/aluno.response';
 import { AlunoService } from '../../data-access/aluno.service';
@@ -14,38 +18,40 @@ import { AuthService } from '../../../../core/services/auth.service';
 import { Role } from '../../../../core/models/enums/role.enum';
 import { ConfirmDialogService } from '../../../../core/services/confirm-dialog.service';
 import { NotificationService } from '../../../../core/services/notification.service';
-import { AlunoFormComponent } from '../../components/aluno-form/aluno-form.component';
 import { AlunoDetailComponent, AlunoDetailData } from '../../components/aluno-detail/aluno-detail.component';
 import { BoletimModalComponent, BoletimDialogData } from '../../components/boletim-modal/boletim-modal.component';
 import { FrequenciaModalComponent, FrequenciaDialogData } from '../../components/frequencia-modal/frequencia-modal.component';
-
-type ModalAtivo = 'form' | null;
 
 @Component({
   selector: 'app-aluno-list',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    FormsModule,
     MatTableModule,
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
     MatTooltipModule,
     MatDialogModule,
-    AlunoFormComponent
+    MatFormFieldModule,
+    MatInputModule
   ],
   templateUrl: './aluno-list.component.html',
   styles: [`
     table { width: 100%; }
     .actions-cell { display: flex; gap: 4px; justify-content: flex-end; }
     h1 { margin: 0; font-size: 24px; font-weight: 500; }
+    .search-bar { display: flex; gap: 12px; align-items: flex-start; margin-top: 16px; }
+    .search-bar mat-form-field { flex: 1; }
+    .actions-row { display: flex; gap: 12px; margin-bottom: 16px; }
   `]
 })
 export class AlunoListComponent {
   protected alunos = signal<AlunoResponse[]>([]);
   protected loading = signal(false);
-  protected modalAtivo = signal<ModalAtivo>(null);
-  protected alunoSelecionadoId = signal<number | null>(null);
+  protected buscaRealizada = signal(false);
+  protected termoBusca = signal('');
 
   readonly displayedColumns = ['id', 'nome', 'cpf', 'email', 'acoes'];
 
@@ -55,19 +61,24 @@ export class AlunoListComponent {
   private notification = inject(NotificationService);
   private dialog = inject(MatDialog);
   private destroyRef = inject(DestroyRef);
+  private router = inject(Router);
 
   protected isSecretaria = computed(() => this.auth.hasRole(Role.SECRETARIA));
 
   constructor() {
-    this.carregarAlunos();
     this.alunoService.alunoAtualizado$
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => this.carregarAlunos());
+      .subscribe(() => {
+        if (this.buscaRealizada()) this.buscar();
+      });
   }
 
-  carregarAlunos(): void {
+  buscar(): void {
+    const q = this.termoBusca().trim();
     this.loading.set(true);
-    this.alunoService.findAll()
+    this.buscaRealizada.set(true);
+    const req$ = q ? this.alunoService.search(q) : this.alunoService.findAll();
+    req$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (data) => { this.alunos.set(data); this.loading.set(false); },
@@ -75,8 +86,14 @@ export class AlunoListComponent {
       });
   }
 
-  abrirNovo(): void { this.alunoSelecionadoId.set(null); this.modalAtivo.set('form'); }
-  abrirEdicao(id: number): void { this.alunoSelecionadoId.set(id); this.modalAtivo.set('form'); }
+  limparBusca(): void {
+    this.termoBusca.set('');
+    this.alunos.set([]);
+    this.buscaRealizada.set(false);
+  }
+
+  abrirNovo(): void { this.router.navigate(['/alunos/novo']); }
+  abrirEdicao(id: number): void { this.router.navigate(['/alunos', id, 'editar']); }
 
   abrirDetalhe(id: number): void {
     this.dialog.open(AlunoDetailComponent, {
@@ -94,11 +111,6 @@ export class AlunoListComponent {
     this.dialog.open(FrequenciaModalComponent, {
       data: { alunoId: id } satisfies FrequenciaDialogData
     });
-  }
-
-  fecharModal(): void {
-    this.modalAtivo.set(null);
-    this.alunoSelecionadoId.set(null);
   }
 
   excluir(id: number, nome: string): void {

@@ -1,13 +1,18 @@
+import { CertidaoNascimentoDto, EnderecoDto, ResponsavelDto } from '../requests/aluno.request';
 
 export interface AlunoDetalheResponse {
   id: number;
   nome: string;
   cpf: string;
-  rg: string;
-  dataNascimento: string; 
+  rg?: string;
+  tituloEleitor?: string;
+  dataNascimento: string;
   email: string;
-  telefone: string;
-  endereco: string;
-  nomeMae: string;
-  nomePai: string;
+  telefone?: string;
+  telefoneResponsavel: string;
+  endereco: EnderecoDto;
+  certidaoNascimento?: CertidaoNascimentoDto;
+  mae?: ResponsavelDto;
+  pai?: ResponsavelDto;
+  responsavelLegal?: ResponsavelDto;
 }

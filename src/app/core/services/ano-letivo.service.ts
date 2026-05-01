@@ -17,6 +17,16 @@ export class AnoLetivoService {
 
   readonly label = computed(() => `${this.ano()} · ${this.semestre()}º sem`);
 
+  readonly status = computed<'PASSADO' | 'ATUAL' | 'FUTURO'>(() => {
+    const now = new Date();
+    const anoNow = now.getFullYear();
+    const semNow: 1 | 2 = now.getMonth() < 6 ? 1 : 2;
+    const cmp = this.ano() !== anoNow ? this.ano() - anoNow : this.semestre() - semNow;
+    return cmp < 0 ? 'PASSADO' : cmp > 0 ? 'FUTURO' : 'ATUAL';
+  });
+
+  readonly emAndamento = computed(() => this.status() === 'ATUAL');
+
   constructor() {
     effect(() => {
       const data: Stored = { ano: this.ano(), semestre: this.semestre() };

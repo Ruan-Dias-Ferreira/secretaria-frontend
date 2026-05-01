@@ -113,7 +113,7 @@ export class MatriculaListComponent implements OnInit {
 
   protected badgeClass(status: StatusMatricula): string {
     const m: Record<StatusMatricula, string> = {
-      [StatusMatricula.ATIVO]:      'badge badge-green',
+      [StatusMatricula.ATIVA]:      'badge badge-green',
       [StatusMatricula.TRANSFERIDO]:'badge badge-yellow',
       [StatusMatricula.DESISTENTE]: 'badge badge-red',
       [StatusMatricula.CONCLUIDA]:  'badge badge-blue',
@@ -123,7 +123,7 @@ export class MatriculaListComponent implements OnInit {
 
   protected badgeLabel(status: StatusMatricula): string {
     const m: Record<StatusMatricula, string> = {
-      [StatusMatricula.ATIVO]:      'Ativa',
+      [StatusMatricula.ATIVA]:      'Ativa',
       [StatusMatricula.TRANSFERIDO]:'Transferida',
       [StatusMatricula.DESISTENTE]: 'Cancelada',
       [StatusMatricula.CONCLUIDA]:  'Concluída',

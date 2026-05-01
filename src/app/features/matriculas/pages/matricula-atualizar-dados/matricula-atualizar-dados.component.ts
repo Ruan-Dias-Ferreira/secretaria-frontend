@@ -74,8 +74,12 @@ export class MatriculaAtualizarDadosComponent implements OnInit {
         next: a => {
           this.form.patchValue({
             nome: a.nome, dataNascimento: a.dataNascimento,
-            cpf: a.cpf, nomeMae: a.nomeMae,
-            telefone: a.telefone, email: a.email, endereco: a.endereco,
+            cpf: a.cpf, nomeMae: a.mae?.nome ?? '',
+            telefone: a.telefoneResponsavel ?? a.telefone ?? '',
+            email: a.email,
+            endereco: a.endereco?.rua ?? '',
+            bairro: a.endereco?.bairro ?? '',
+            cep: a.endereco?.cep ?? '',
           });
           this.loading.set(false);
         },
@@ -89,9 +93,20 @@ export class MatriculaAtualizarDadosComponent implements OnInit {
     this.saving.set(true);
     const v = this.form.getRawValue();
     this.alunoSvc.update(this.alunoId(), {
-      nome: v.nome, cpf: v.cpf, dataNascimento: v.dataNascimento,
-      nomeMae: v.nomeMae, telefone: v.telefone, email: v.email, endereco: v.endereco,
-      rg: '', nomePai: '',
+      nome: v.nome,
+      cpf: v.cpf,
+      dataNascimento: v.dataNascimento,
+      email: v.email,
+      telefone: v.telefone,
+      telefoneResponsavel: v.telefone,
+      endereco: {
+        rua: v.endereco,
+        bairro: v.bairro,
+        cidade: '',
+        estado: '',
+        cep: v.cep,
+      },
+      mae: { nome: v.nomeMae, telefone: v.telefone },
     }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.saving.set(false);

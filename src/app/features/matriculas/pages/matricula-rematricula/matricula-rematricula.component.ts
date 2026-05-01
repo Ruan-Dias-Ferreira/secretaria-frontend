@@ -133,7 +133,7 @@ export class MatriculaRematriculaComponent {
       const alunosPendentes = matriculas
         .filter(m => m.turmaId === turmaId
                   && m.anoLetivo === anoCorrente
-                  && m.status === StatusMatricula.ATIVO
+                  && m.status === StatusMatricula.ATIVA
                   && !jaRematriculados.has(m.alunoId));
 
       if (alunosPendentes.length === 0) {
@@ -233,7 +233,7 @@ export class MatriculaRematriculaComponent {
       this.notification.error('Edição só é permitida durante a janela de rematrícula.');
       return;
     }
-    const turmasDestino = this.turmas().filter(t => t.anoLetivo === this.anoDestino());
+    const turmasDestino = this.turmas().filter(t => t.anoLetivo === this.anoDestino() && t.rematricula);
     this.dialog.open(RematriculaEditDialogComponent, {
       width: '480px',
       data: { rematriculado: r, turmas: turmasDestino },

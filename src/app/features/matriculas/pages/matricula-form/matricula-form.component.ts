@@ -66,7 +66,7 @@ export class MatriculaFormComponent {
   protected readonly turnos     = ['Manhã', 'Tarde', 'Noite'];
   protected readonly series     = ['1º Ano', '2º Ano', '3º Ano'];
   protected readonly situacoes  = [
-    { value: StatusMatricula.ATIVO,      label: 'Ativa' },
+    { value: StatusMatricula.ATIVA,      label: 'Ativa' },
     { value: StatusMatricula.DESISTENTE, label: 'Aguardando documentação' },
   ];
 
@@ -89,7 +89,7 @@ export class MatriculaFormComponent {
     serie:         ['', Validators.required],
     turmaId:       [0 as number, Validators.required],
     turno:         ['', Validators.required],
-    situacao:      [StatusMatricula.ATIVO, Validators.required],
+    situacao:      [StatusMatricula.ATIVA, Validators.required],
   });
 
   protected readonly step3Form = this.fb.group({
@@ -178,7 +178,7 @@ export class MatriculaFormComponent {
     this.success.set(false);
     this.alunoSelecionado.set(null);
     this.busca.reset();
-    this.step2Form.reset({ dataMatricula: new Date(), situacao: StatusMatricula.ATIVO });
+    this.step2Form.reset({ dataMatricula: new Date(), situacao: StatusMatricula.ATIVA });
     this.docChecks.set(Object.fromEntries(DOCUMENTOS_LIST.map(d => [d, false])));
     this.step4Confirm.reset(false);
   }

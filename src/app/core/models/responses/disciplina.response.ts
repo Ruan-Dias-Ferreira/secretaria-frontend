@@ -3,6 +3,8 @@ export interface DisciplinaResponse {
     nome: string;
     cargaHoraria: number;
     turmaId: number;
-    professorId: number|null;
-    professorLogin:string|null;
+    turmaAnoLetivo: number | null;
+    turmaOperavel: boolean | null;
+    professorId: number | null;
+    professorLogin: string | null;
 }

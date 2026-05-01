@@ -90,7 +90,7 @@ export class DisciplinaFormComponent {
     .pipe(takeUntilDestroyed(this.destroyRef))
     .subscribe({
       next: ({ turmas, usuarios }) => {
-        this.turmas.set(turmas);
+        this.turmas.set(turmas.filter(t => t.operavel));
         this.professores.set(usuarios.filter(u => u.role === Role.PROFESSOR));
         const id = this.disciplinaId();
         if (id !== null) {

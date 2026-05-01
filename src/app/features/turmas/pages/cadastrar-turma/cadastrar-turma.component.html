@@ -1,0 +1,79 @@
+<div class="page">
+
+  <header class="page-header">
+    <div class="title-wrap">
+      <mat-icon>class</mat-icon>
+      <h1>Cadastrar Turma</h1>
+    </div>
+    <span class="ano-tag">Ano em andamento: {{ anoAtual }}</span>
+  </header>
+
+  @if (mensagemJanela(); as msg) {
+    <section class="info-janela" [class.aberta]="janelaAberta()">
+      <mat-icon>{{ janelaAberta() ? 'event_available' : 'lock_clock' }}</mat-icon>
+      <span>{{ msg }}</span>
+    </section>
+  }
+
+  <section class="card">
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="form-grid">
+
+      <mat-form-field appearance="outline" class="full">
+        <mat-label>Nome da turma</mat-label>
+        <input matInput formControlName="nome" placeholder="Ex.: Turma A - 5º Ano" maxlength="60" />
+        @if (form.get('nome')?.hasError('required') && form.get('nome')?.touched) {
+          <mat-error>Nome obrigatório.</mat-error>
+        }
+        @if (form.get('nome')?.hasError('minlength')) {
+          <mat-error>Mínimo 2 caracteres.</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Ano letivo</mat-label>
+        <mat-select formControlName="anoLetivo">
+          @for (a of anosPermitidos(); track a.value) {
+            <mat-option [value]="a.value">{{ a.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Turno</mat-label>
+        <mat-select formControlName="turno">
+          @for (t of turnos; track t.value) {
+            <mat-option [value]="t.value">{{ t.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full">
+        <mat-label>Curso / Nível</mat-label>
+        <mat-select formControlName="curso">
+          <mat-option value="">— selecione —</mat-option>
+          @for (c of cursos; track c) {
+            <mat-option [value]="c">{{ c }}</mat-option>
+          }
+        </mat-select>
+        @if (form.get('curso')?.hasError('required') && form.get('curso')?.touched) {
+          <mat-error>Curso obrigatório.</mat-error>
+        }
+      </mat-form-field>
+
+      <div class="actions full">
+        <button type="button" class="btn btn-ghost" (click)="cancelar()" [disabled]="salvando()">
+          <mat-icon>arrow_back</mat-icon> Cancelar
+        </button>
+        <button type="button" class="btn btn-ghost" (click)="limpar()" [disabled]="salvando()">
+          <mat-icon>refresh</mat-icon> Limpar
+        </button>
+        <button type="submit" class="btn btn-primary" [disabled]="salvando()">
+          @if (salvando()) { <mat-spinner diameter="18"></mat-spinner> }
+          @else { <mat-icon>save</mat-icon> }
+          Salvar Turma
+        </button>
+      </div>
+    </form>
+  </section>
+
+</div>

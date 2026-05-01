@@ -1,0 +1,256 @@
+<div class="page-container">
+  <div class="page-header">
+    <button mat-icon-button (click)="voltar()" aria-label="Voltar">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <h1>{{ isEdicao() ? 'Editar Aluno' : 'Cadastrar Novo Aluno' }}</h1>
+  </div>
+
+  @if (loading()) {
+    <div class="loading-overlay">
+      <mat-spinner diameter="48"></mat-spinner>
+    </div>
+  }
+
+  @if (!loading()) {
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+
+      <!-- Dados pessoais -->
+      <div class="section" [class.has-error]="dadosAlunoInvalido()">
+        <h3>Dados do Aluno</h3>
+        <div class="form-grid">
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>Nome completo</mat-label>
+            <input matInput formControlName="nome" />
+            @if (form.get('nome')?.hasError('required')) { <mat-error>Obrigatório.</mat-error> }
+            @if (form.get('nome')?.hasError('minlength')) { <mat-error>Mínimo 3 caracteres.</mat-error> }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>CPF</mat-label>
+            <input matInput formControlName="cpf" appCpfMask maxlength="14" placeholder="000.000.000-00" />
+            <mat-error>Obrigatório.</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>RG (opcional)</mat-label>
+            <input matInput formControlName="rg" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Título de Eleitor (opcional)</mat-label>
+            <input matInput formControlName="tituloEleitor" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Data de Nascimento</mat-label>
+            <input matInput type="date" formControlName="dataNascimento" />
+            <mat-error>Obrigatório.</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>Email (opcional)</mat-label>
+            <input matInput formControlName="email" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Telefone do aluno (opcional)</mat-label>
+            <input matInput formControlName="telefone" appTelefoneMask maxlength="15" placeholder="(00) 00000-0000" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Telefone do responsável</mat-label>
+            <input matInput formControlName="telefoneResponsavel" appTelefoneMask maxlength="15" placeholder="(00) 00000-0000" />
+            <mat-error>Obrigatório.</mat-error>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <mat-divider></mat-divider>
+
+      <!-- Endereço -->
+      <div class="section" formGroupName="endereco" [class.has-error]="secaoInvalida('endereco')">
+        <h3>Endereço</h3>
+        <div class="form-grid">
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>Rua</mat-label>
+            <input matInput formControlName="rua" />
+            <mat-error>Obrigatório.</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Bairro</mat-label>
+            <input matInput formControlName="bairro" />
+            <mat-error>Obrigatório.</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Cidade</mat-label>
+            <input matInput formControlName="cidade" />
+            <mat-error>Obrigatório.</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Estado</mat-label>
+            <input matInput formControlName="estado" maxlength="2" />
+            <mat-error>Obrigatório.</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>CEP</mat-label>
+            <input matInput formControlName="cep" appCepMask maxlength="9" placeholder="00000-000" />
+            <mat-error>Obrigatório.</mat-error>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <mat-divider></mat-divider>
+
+      <!-- Certidão de Nascimento -->
+      <div class="section" formGroupName="certidaoNascimento" [class.has-error]="secaoInvalida('certidaoNascimento')">
+        <h3>Certidão de Nascimento</h3>
+        <p style="margin: 4px 0 12px; color: var(--mat-sys-on-surface-variant); font-size: 13px;">
+          Informe a <strong>matrícula</strong> (32 dígitos, certidões novas) <strong>OU</strong> os dados do termo
+          (livro, folha e termo, certidões antigas).
+        </p>
+        <div class="form-grid">
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>Matrícula (32 dígitos)</mat-label>
+            <input matInput formControlName="matricula" appDigitsOnly [maxDigits]="32" maxlength="32" />
+            <mat-hint align="end">
+              {{ form.get('certidaoNascimento.matricula')?.value?.length || 0 }}/32
+            </mat-hint>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Livro</mat-label>
+            <input matInput formControlName="livro" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Folha</mat-label>
+            <input matInput formControlName="folha" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Termo (registro)</mat-label>
+            <input matInput formControlName="termo" />
+          </mat-form-field>
+        </div>
+        @if (submitTentado() && form.get('certidaoNascimento')?.hasError('matriculaInvalida')) {
+          <div class="global-error">A matrícula deve conter exatamente 32 dígitos.</div>
+        }
+        @if (submitTentado() && form.get('certidaoNascimento')?.hasError('certidaoIncompleta')) {
+          <div class="global-error">Informe a matrícula (32 dígitos) ou preencha livro, folha e termo.</div>
+        }
+      </div>
+
+      <mat-divider></mat-divider>
+
+      <!-- Responsáveis -->
+      <mat-accordion multi class="section" [class.has-error]="submitTentado() && form.hasError('semResponsavel')">
+        <mat-expansion-panel [expanded]="true" formGroupName="mae"
+          [class.has-error]="submitTentado() && form.hasError('semResponsavel')">
+          <mat-expansion-panel-header>
+            <mat-panel-title>Mãe</mat-panel-title>
+          </mat-expansion-panel-header>
+          <div class="form-grid">
+            <mat-form-field appearance="outline" class="full">
+              <mat-label>Nome da mãe</mat-label>
+              <input matInput formControlName="nome" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>CPF</mat-label>
+              <input matInput formControlName="cpf" appCpfMask maxlength="14" placeholder="000.000.000-00" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>RG</mat-label>
+              <input matInput formControlName="rg" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Título de Eleitor</mat-label>
+              <input matInput formControlName="tituloEleitor" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Telefone</mat-label>
+              <input matInput formControlName="telefone" appTelefoneMask maxlength="15" placeholder="(00) 00000-0000" />
+            </mat-form-field>
+          </div>
+        </mat-expansion-panel>
+
+        <mat-expansion-panel formGroupName="pai"
+          [class.has-error]="submitTentado() && form.hasError('semResponsavel')">
+          <mat-expansion-panel-header>
+            <mat-panel-title>Pai</mat-panel-title>
+          </mat-expansion-panel-header>
+          <div class="form-grid">
+            <mat-form-field appearance="outline" class="full">
+              <mat-label>Nome do pai</mat-label>
+              <input matInput formControlName="nome" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>CPF</mat-label>
+              <input matInput formControlName="cpf" appCpfMask maxlength="14" placeholder="000.000.000-00" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>RG</mat-label>
+              <input matInput formControlName="rg" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Título de Eleitor</mat-label>
+              <input matInput formControlName="tituloEleitor" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Telefone</mat-label>
+              <input matInput formControlName="telefone" appTelefoneMask maxlength="15" placeholder="(00) 00000-0000" />
+            </mat-form-field>
+          </div>
+        </mat-expansion-panel>
+
+        <mat-expansion-panel formGroupName="responsavelLegal"
+          [class.has-error]="submitTentado() && form.hasError('semResponsavel')">
+          <mat-expansion-panel-header>
+            <mat-panel-title>Responsável Legal</mat-panel-title>
+            <mat-panel-description>Use quando aluno não tem mãe ou pai cadastrados</mat-panel-description>
+          </mat-expansion-panel-header>
+          <div class="form-grid">
+            <mat-form-field appearance="outline" class="full">
+              <mat-label>Nome do responsável legal</mat-label>
+              <input matInput formControlName="nome" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>CPF</mat-label>
+              <input matInput formControlName="cpf" appCpfMask maxlength="14" placeholder="000.000.000-00" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>RG</mat-label>
+              <input matInput formControlName="rg" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Título de Eleitor</mat-label>
+              <input matInput formControlName="tituloEleitor" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Telefone</mat-label>
+              <input matInput formControlName="telefone" appTelefoneMask maxlength="15" placeholder="(00) 00000-0000" />
+            </mat-form-field>
+          </div>
+        </mat-expansion-panel>
+      </mat-accordion>
+
+      @if (submitTentado() && form.hasError('semResponsavel')) {
+        <div class="global-error">É obrigatório preencher o nome de pelo menos um responsável (mãe, pai ou legal).</div>
+      }
+      @if (submitTentado() && form.invalid && !form.hasError('semResponsavel')) {
+        <div class="global-error">Há campos obrigatórios não preenchidos ou inválidos. Corrija os blocos destacados em vermelho.</div>
+      }
+
+      <div class="actions">
+        <button type="button" mat-button (click)="voltar()">Cancelar</button>
+        <button type="submit" mat-flat-button color="primary" [disabled]="loading()">
+          {{ isEdicao() ? 'Atualizar' : 'Salvar' }}
+        </button>
+      </div>
+    </form>
+  }
+</div>

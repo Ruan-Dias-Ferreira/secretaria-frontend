@@ -9,6 +9,7 @@
       <span class="chip chip-ok">Presentes: {{ resumo().presentes }}</span>
       <span class="chip chip-err">Faltas: {{ resumo().faltas }}</span>
       <span class="chip chip-warn">Justificadas: {{ resumo().justificadas }}</span>
+      <span class="chip">Dispensados: {{ resumo().dispensados }}</span>
       <span class="chip">Pendentes: {{ resumo().pendentes }}</span>
     </div>
   </header>
@@ -27,7 +28,7 @@
 
     <label class="field">
       <span>Data</span>
-      <input type="date" [ngModel]="data()"
+      <input type="date" [ngModel]="data()" [min]="dataMin()" [max]="dataMax()"
              (ngModelChange)="data.set($event); onDataChange()" />
     </label>
 
@@ -42,10 +43,10 @@
       <span>{{ dataInvalida() }} Frequência não pode ser lançada nesta data.</span>
     </section>
   }
-  @if (!dataInvalida() && anoBloqueado()) {
+  @if (anoBloqueado()) {
     <section class="data-bloqueada">
       <mat-icon>lock</mat-icon>
-      <span>Ano letivo encerrado. Frequência só pode ser consultada, não editada.</span>
+      <span>{{ msgAnoBloqueado() }}</span>
     </section>
   }
 

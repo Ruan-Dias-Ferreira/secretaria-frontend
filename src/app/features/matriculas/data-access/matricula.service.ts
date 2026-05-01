@@ -31,6 +31,11 @@ export interface RematriculaRequest {
   turmaDestinoId: number;
 }
 
+export interface RealocacaoRequest {
+  alunoId: number;
+  novaTurmaId: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class MatriculaService {
   private readonly apiUrl = `${environment.apiUrl}/matricula`;
@@ -106,6 +111,11 @@ export class MatriculaService {
 
   editarRematricula(alunoId: number, request: RematriculaRequest): Observable<MatriculaResponse> {
     return this.http.put<MatriculaResponse>(`${this.apiUrl}/rematricula/${alunoId}`, request)
+      .pipe(tap(() => this.matriculaAtualizada.next()));
+  }
+
+  realocar(request: RealocacaoRequest): Observable<MatriculaResponse> {
+    return this.http.post<MatriculaResponse>(`${this.apiUrl}/realocacao`, request)
       .pipe(tap(() => this.matriculaAtualizada.next()));
   }
 

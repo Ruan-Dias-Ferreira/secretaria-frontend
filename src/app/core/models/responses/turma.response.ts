@@ -1,7 +1,9 @@
-export interface TurmaResponse{
-    nome:string;
-    turno:string;
-    anoLetivo:number;
-    curso:string;
-    id:number;
+export interface TurmaResponse {
+    nome: string;
+    turno: string;
+    anoLetivo: number;
+    curso: string;
+    id: number;
+    rematricula: boolean;
+    operavel: boolean;
 }

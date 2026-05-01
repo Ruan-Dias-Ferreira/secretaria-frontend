@@ -51,6 +51,18 @@ export const routes: Routes = [
           import('./features/alunos/pages/aluno-list/aluno-list.component')
             .then(m => m.AlunoListComponent),
       },
+      {
+        path: 'alunos/novo', ...sec,
+        loadComponent: () =>
+          import('./features/alunos/pages/aluno-form-page/aluno-form-page.component')
+            .then(m => m.AlunoFormPageComponent),
+      },
+      {
+        path: 'alunos/:id/editar', ...sec,
+        loadComponent: () =>
+          import('./features/alunos/pages/aluno-form-page/aluno-form-page.component')
+            .then(m => m.AlunoFormPageComponent),
+      },
 
       // ── Matrículas ──────────────────────────────────────────────────
       { path: 'matriculas', redirectTo: 'matriculas/nova', pathMatch: 'full' },
@@ -156,8 +168,18 @@ export const routes: Routes = [
       { path: 'modulacao/insercao',        ...placeholder('Inserção') },
 
       // ── Turmas placeholders ──────────────────────────────────────────
-      { path: 'turmas/cadastro',    ...placeholder('Cadastrar Turma') },
-      { path: 'turmas/realocacao',  ...placeholder('Realocação') },
+      {
+        path: 'turmas/cadastro', ...sec,
+        loadComponent: () =>
+          import('./features/turmas/pages/cadastrar-turma/cadastrar-turma.component')
+            .then(m => m.CadastrarTurmaComponent),
+      },
+      {
+        path: 'turmas/realocacao', ...sec,
+        loadComponent: () =>
+          import('./features/turmas/pages/realocacao/realocacao.component')
+            .then(m => m.RealocacaoComponent),
+      },
       { path: 'turmas/situacao',    ...placeholder('Situação das Turmas') },
       { path: 'turmas/salas',       ...placeholder('Salas') },
       { path: 'turmas/grade',       ...placeholder('Grade Curricular') },
