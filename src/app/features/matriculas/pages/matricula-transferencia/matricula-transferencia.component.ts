@@ -15,13 +15,11 @@ import { MatNativeDateModule }   from '@angular/material/core';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { AlunoService }        from '../../../alunos/data-access/aluno.service';
-import { TurmaService }        from '../../../turmas/data-access/turma.service';
 import { MatriculaService }    from '../../data-access/matricula.service';
 import { ConfirmDialogService } from '../../../../core/services/confirm-dialog.service';
 import { NotificationService } from '../../../../core/services/notification.service';
 import { HistoryService }      from '../../../../core/services/history.service';
 import { AlunoResponse }       from '../../../../core/models/responses/aluno.response';
-import { TurmaResponse }       from '../../../../core/models/responses/turma.response';
 
 const MOTIVOS = ['Mudança de endereço', 'Solicitação da família', 'Vaga indisponível', 'Outro'];
 
@@ -40,42 +38,34 @@ const MOTIVOS = ['Mudança de endereço', 'Solicitação da família', 'Vaga ind
 export class MatriculaTransferenciaComponent {
   private readonly fb           = inject(NonNullableFormBuilder);
   private readonly alunoSvc     = inject(AlunoService);
-  private readonly turmaSvc     = inject(TurmaService);
   private readonly matriculaSvc = inject(MatriculaService);
   private readonly confirmSvc   = inject(ConfirmDialogService);
   private readonly notification = inject(NotificationService);
   private readonly history      = inject(HistoryService);
   private readonly destroyRef   = inject(DestroyRef);
 
-  protected readonly turmas    = signal<TurmaResponse[]>([]);
-  protected readonly motivos   = MOTIVOS;
-  protected readonly turnos    = ['Manhã', 'Tarde', 'Noite'];
-  protected readonly tipos     = ['Interna (outra turma)', 'Externa (outra escola)'];
+  protected readonly motivos    = MOTIVOS;
   protected readonly submitting = signal(false);
   protected readonly busca      = this.fb.control('');
   protected readonly buscaResults = signal<AlunoResponse[]>([]);
   protected readonly showDropdown = signal(false);
   protected readonly searching    = signal(false);
   protected readonly alunoSelecionado = signal<AlunoResponse | null>(null);
-  protected readonly matriculaId  = signal<number | null>(null);
 
   protected readonly form = this.fb.group({
-    tipo:          ['Interna (outra turma)', Validators.required],
-    novaTurmaId:   [0 as number],
-    novoTurno:     [''],
-    escolaDestino: [''],
+    escolaDestino:     ['', [Validators.required, Validators.maxLength(120)]],
     dataTransferencia: [new Date() as Date, Validators.required],
-    motivo:        ['', Validators.required],
-    observacoes:   [''],
+    motivo:            ['', Validators.required],
+    observacoes:       [''],
   });
 
   constructor() {
-    this.turmaSvc.findAll().pipe(takeUntilDestroyed(this.destroyRef)).subscribe(t => this.turmas.set(t));
-
     this.busca.valueChanges.pipe(
       debounceTime(350), distinctUntilChanged(),
       switchMap(q => {
-        if (!q || q.length < 2) { this.buscaResults.set([]); this.showDropdown.set(false); return of([]); }
+        if (!q || q.length < 2) {
+          this.buscaResults.set([]); this.showDropdown.set(false); return of([]);
+        }
         this.searching.set(true);
         return this.alunoSvc.search(q).pipe(catchError(() => of([])));
       }),
@@ -87,8 +77,6 @@ export class MatriculaTransferenciaComponent {
     });
   }
 
-  protected get isInterna(): boolean { return this.form.value.tipo?.startsWith('Interna') ?? true; }
-
   protected selecionarAluno(a: AlunoResponse): void {
     this.alunoSelecionado.set(a);
     this.showDropdown.set(false);
@@ -96,38 +84,46 @@ export class MatriculaTransferenciaComponent {
   }
 
   protected confirmar(): void {
-    if (!this.alunoSelecionado() || this.form.invalid) { this.form.markAllAsTouched(); return; }
+    if (!this.alunoSelecionado() || this.form.invalid) {
+      this.form.markAllAsTouched(); return;
+    }
+    const aluno = this.alunoSelecionado()!;
     const v = this.form.getRawValue();
+
     this.confirmSvc.confirm({
-      title: 'Confirmar Transferência',
-      message: `Transferir ${this.alunoSelecionado()!.nome}?`,
+      title: 'Confirmar Transferência Externa',
+      message: `Transferir ${aluno.nome} para ${v.escolaDestino}?`,
       confirmLabel: 'Confirmar', cancelLabel: 'Cancelar',
     }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(ok => {
       if (!ok) return;
       this.submitting.set(true);
+
       const req = {
-        tipo: this.isInterna ? 'INTERNA' as const : 'EXTERNA' as const,
-        novaTurmaId:    this.isInterna ? v.novaTurmaId : undefined,
-        novoTurno:      this.isInterna ? v.novoTurno : undefined,
-        escolaDestino:  !this.isInterna ? v.escolaDestino : undefined,
+        tipo: 'EXTERNA' as const,
+        escolaDestino: v.escolaDestino,
         dataTransferencia: new Date(v.dataTransferencia).toISOString().split('T')[0],
-        motivo:        v.motivo,
-        observacoes:   v.observacoes,
+        motivo: v.motivo,
+        observacoes: v.observacoes,
       };
+
       // uses id 0 as placeholder since we don't fetch the matricula id in this flow
-      this.matriculaSvc.transferir(0, req).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-        next: () => {
-          this.submitting.set(false);
-          this.notification.success('Transferência registrada com sucesso!');
-          this.history.add(`Transferência — ${this.alunoSelecionado()!.nome}`, '/matriculas/transferencia');
-          this.cancelar();
-        },
-        error: () => this.submitting.set(false),
-      });
+      this.matriculaSvc.transferir(0, req)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: () => {
+            this.submitting.set(false);
+            this.notification.success('Transferência externa registrada com sucesso!');
+            this.history.add(`Transferência — ${aluno.nome}`, '/matriculas/transferencia');
+            this.cancelar();
+          },
+          error: () => this.submitting.set(false),
+        });
     });
   }
 
   protected cancelar(): void {
-    this.alunoSelecionado.set(null); this.busca.reset(); this.form.reset();
+    this.alunoSelecionado.set(null);
+    this.busca.reset();
+    this.form.reset();
   }
 }

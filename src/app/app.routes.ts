@@ -123,6 +123,12 @@ export const routes: Routes = [
             .then(m => m.FrequenciaListComponent),
       },
       {
+        path: 'frequencias/lancar', ...both,
+        loadComponent: () =>
+          import('./features/frequencias/pages/inserir-frequencia/inserir-frequencia.component')
+            .then(m => m.InserirFrequenciaComponent),
+      },
+      {
         path: 'documentos', ...sec,
         loadComponent: () =>
           import('./features/documentos/pages/documento-list/documento-list.component')
@@ -133,6 +139,12 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/usuarios/pages/usuario-list/usuario-list.component')
             .then(m => m.UsuarioListComponent),
+      },
+      {
+        path: 'eventos', ...sec,
+        loadComponent: () =>
+          import('./features/eventos/pages/evento-list/evento-list.component')
+            .then(m => m.EventoListComponent),
       },
 
       // ── Modulação placeholders ───────────────────────────────────────

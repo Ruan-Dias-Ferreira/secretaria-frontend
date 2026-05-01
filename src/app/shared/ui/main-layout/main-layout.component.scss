@@ -90,6 +90,76 @@
 
 .pill-icon { font-size: 16px; width: 16px; height: 16px; }
 
+.year-pill {
+  font-family: var(--sketch-font);
+  height: 36px;
+  line-height: 1;
+
+  .user-caret {
+    font-size: 14px;
+    margin-left: 2px;
+  }
+}
+
+.year-menu-header {
+  padding: 6px 16px 2px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--mid);
+  font-family: var(--sketch-font);
+  cursor: default;
+}
+
+::ng-deep .year-menu .mat-mdc-menu-item.active {
+  background: var(--blue-l);
+  color: var(--blue);
+}
+
+.year-input-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px 8px;
+}
+
+.year-input {
+  flex: 1;
+  height: 32px;
+  padding: 0 10px;
+  border: 2px solid var(--ink);
+  border-radius: 16px;
+  background: var(--white);
+  color: var(--ink);
+  font-family: var(--sketch-font);
+  font-size: 14px;
+  font-weight: 700;
+  outline: none;
+  -moz-appearance: textfield;
+
+  &::-webkit-outer-spin-button,
+  &::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+  &:focus { border-color: var(--blue); }
+}
+
+.year-apply-btn {
+  width: 32px !important;
+  height: 32px !important;
+  flex-shrink: 0;
+
+  ::ng-deep .mat-icon { font-size: 18px; width: 18px; height: 18px; }
+}
+
+.year-error {
+  padding: 0 16px 8px;
+  color: var(--err);
+  font-size: 12px;
+  font-family: var(--sketch-font);
+  font-weight: 700;
+}
+
 .header-icon-btn {
   width: 36px !important;
   height: 36px !important;
@@ -118,39 +188,82 @@
 }
 
 .user-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 0 8px !important;
-  height: 36px;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  height: 36px !important;
+  min-width: 0 !important;
+  padding: 0 4px 0 12px !important;
+  border: 2px solid var(--ink) !important;
   border-radius: 20px !important;
+  background: var(--white) !important;
   font-family: var(--sketch-font) !important;
-  color: var(--mid) !important;
+  color: var(--ink) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0 !important;
+  transition: background .15s, border-color .15s, padding .15s !important;
+
+  .user-caret {
+    width: 0;
+    opacity: 0;
+    margin-left: -6px;
+    transition: width .15s, opacity .15s, margin-left .15s;
+  }
+
+  &:hover,
+  &[aria-expanded="true"] {
+    background: var(--blue-l) !important;
+    border-color: var(--blue) !important;
+
+    .user-caret {
+      width: 18px;
+      opacity: 1;
+      margin-left: 0;
+    }
+  }
+
+  ::ng-deep .mdc-button__label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 100%;
+    overflow: hidden;
+  }
 }
 
 .user-avatar {
-  width: 36px;
-  height: 36px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   background: var(--blue-l);
   color: var(--blue);
   border: 2px solid var(--ink);
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
+  font-size: 13px;
   font-weight: 700;
   flex-shrink: 0;
   font-family: var(--sketch-font);
+  line-height: 1;
 }
 
 .user-name {
-  font-size: 16px;
-  max-width: 160px;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-size: 14px;
   white-space: nowrap;
-  color: var(--mid);
+  color: var(--ink);
+  font-family: var(--sketch-font);
+  line-height: 1;
+}
+
+.user-caret {
+  font-size: 16px;
+  line-height: 1;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink);
 }
 
 .logout-item { color: var(--err) !important; }

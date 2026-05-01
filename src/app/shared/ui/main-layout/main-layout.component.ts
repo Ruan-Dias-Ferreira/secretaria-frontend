@@ -27,6 +27,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { AuthService } from '../../../core/services/auth.service';
 import { ThemeService } from '../../../core/services/theme.service';
 import { HistoryItem, HistoryService } from '../../../core/services/history.service';
+import { AnoLetivoService } from '../../../core/services/ano-letivo.service';
 
 export interface NavDropdownItem {
   label?: string;
@@ -74,6 +75,7 @@ export class MainLayoutComponent {
   private readonly router     = inject(Router);
   private readonly theme      = inject(ThemeService);
   private readonly history    = inject(HistoryService);
+  private readonly anoSvc     = inject(AnoLetivoService);
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly sacOpen      = signal(false);
@@ -83,7 +85,9 @@ export class MainLayoutComponent {
   protected readonly loading      = signal(false);
   protected readonly openDropdown = signal<number | null>(null);
   protected readonly sacMessage   = new FormControl('');
-  protected readonly anoLetivo    = new Date().getFullYear();
+  protected readonly anoLetivo    = this.anoSvc.ano;
+  protected readonly semestre     = this.anoSvc.semestre;
+  protected readonly anoErro      = signal<string | null>(null);
 
   protected readonly breadcrumbs    = signal<{ label: string; url: string }[]>([]);
   protected readonly currentUrl     = signal('');
@@ -150,7 +154,6 @@ export class MainLayoutComponent {
     ]},
   ];
 
-  protected readonly filterAnos = [2024, 2025, 2026, 2027];
   protected readonly filterTurma    = new FormControl('');
   protected readonly filterSituacao = new FormControl('');
   protected readonly filterAno      = new FormControl('');
@@ -187,6 +190,28 @@ export class MainLayoutComponent {
   protected toggleSac():        void { this.sacOpen.update(v => !v); this.historyOpen.set(false); }
   protected toggleTheme():      void { this.theme.toggleTheme(); }
   protected toggleSidebar():    void { this.sidebarOpen.update(v => !v); }
+
+  protected aplicarAno(valor: string): void {
+    const ano = Number(valor);
+    if (!Number.isInteger(ano) || ano < 1900 || ano > 2999) {
+      this.anoErro.set('Ano letivo inválido');
+      return;
+    }
+    this.anoErro.set(null);
+    this.anoSvc.exists(ano)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: ok => {
+          if (ok) {
+            this.anoSvc.setAno(ano);
+            this.anoErro.set(null);
+          } else {
+            this.anoErro.set('Ano letivo inexistente');
+          }
+        },
+        error: () => this.anoErro.set('Falha ao validar ano')
+      });
+  }
   protected toggleFilter():     void { this.filterOpen.update(v => !v); }
 
   protected toggleDropdown(idx: number, e: MouseEvent): void {
@@ -226,6 +251,14 @@ export class MainLayoutComponent {
     this.router.navigate(['/matriculas/consultar']);
   }
 
-  @HostListener('document:click')
-  onDocumentClick(): void { this.openDropdown.set(null); }
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(e: MouseEvent): void {
+    this.openDropdown.set(null);
+    if (this.sidebarOpen()) {
+      const t = e.target as HTMLElement | null;
+      if (!t?.closest('.left-sidebar, .sidebar-toggle')) {
+        this.sidebarOpen.set(false);
+      }
+    }
+  }
 }

@@ -4,6 +4,7 @@
 .title-icon { width: 32px; height: 32px; border-radius: 50%; background: var(--app-info-l); border: 1px solid var(--app-rule); display: flex; align-items: center; justify-content: center; }
 
 .info-card { background: var(--app-info-l); border: 1px solid var(--app-rule); border-radius: 8px; padding: 14px 16px; font-size: 14px; }
+.info-card.warn { background: #fff4e5; border-color: #f5b76a; color: #8a4b00; }
 
 .section-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; color: var(--mat-sys-on-surface-variant); opacity: .7; }
 
@@ -18,5 +19,5 @@
 .ar-nome { flex: 1; font-size: 14px; font-weight: 600; }
 .ar-cpf  { font-size: 13px; color: var(--mat-sys-on-surface-variant); }
 
-.result-table { width: 100%; }
+.result-table { width: 100%; td button + button { margin-left: 8px; } }
 .mt { margin-top: 12px; }

@@ -1,0 +1,77 @@
+<div class="page">
+  <header class="page-header">
+    <div class="title-wrap">
+      <mat-icon>event</mat-icon>
+      <h1>Eventos do Calendário</h1>
+    </div>
+  </header>
+
+  <section class="form-card">
+    <div class="form-row">
+      <label class="field">
+        <span>Data</span>
+        <input type="date" [ngModel]="formData()" (ngModelChange)="formData.set($event)" />
+      </label>
+
+      <label class="field">
+        <span>Tipo</span>
+        <select [ngModel]="formTipo()" (ngModelChange)="formTipo.set($event)">
+          @for (t of tipos; track t.id) {
+            <option [value]="t.id">{{ t.label }}</option>
+          }
+        </select>
+      </label>
+
+      <label class="field flex-1">
+        <span>Título</span>
+        <input type="text" placeholder="Ex: Tiradentes"
+               [ngModel]="formTitulo()" (ngModelChange)="formTitulo.set($event)" />
+      </label>
+    </div>
+
+    <label class="field">
+      <span>Descrição (opcional)</span>
+      <textarea rows="2"
+                [ngModel]="formDescricao()" (ngModelChange)="formDescricao.set($event)"></textarea>
+    </label>
+
+    <div class="form-actions">
+      <button class="btn btn-primary" (click)="salvar()" [disabled]="salvando()">
+        <mat-icon>add</mat-icon> Cadastrar Evento
+      </button>
+    </div>
+  </section>
+
+  <section class="lista">
+    <div class="lista-head">
+      <h2>Eventos cadastrados</h2>
+      <span class="hint">{{ eventos().length }} evento(s)</span>
+    </div>
+
+    @if (loading()) {
+      <p class="empty">Carregando…</p>
+    } @else if (eventos().length === 0) {
+      <p class="empty">Nenhum evento cadastrado.</p>
+    } @else {
+      <div class="evento-grid">
+        @for (e of eventosOrdenados(); track e.id) {
+          <article class="evento-card" [class.feriado]="e.tipo === 'FERIADO'"
+                                       [class.coletivo]="e.tipo === 'TRABALHO_COLETIVO'">
+            <div class="evento-data">{{ e.data }}</div>
+            <div class="evento-tipo">
+              <mat-icon>{{ iconTipo(e.tipo) }}</mat-icon>
+              {{ labelTipo(e.tipo) }}
+            </div>
+            <div class="evento-titulo">{{ e.titulo }}</div>
+            @if (e.descricao) {
+              <div class="evento-desc">{{ e.descricao }}</div>
+            }
+            <button class="btn-del" (click)="excluir(e)" aria-label="excluir">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </article>
+        }
+      </div>
+    }
+  </section>
+</div>

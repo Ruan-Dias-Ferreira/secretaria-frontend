@@ -1,0 +1,159 @@
+<div class="page">
+
+  <header class="page-header">
+    <div class="title-wrap">
+      <mat-icon>fact_check</mat-icon>
+      <h1>Inserir Frequência</h1>
+    </div>
+    <div class="resumo">
+      <span class="chip chip-ok">Presentes: {{ resumo().presentes }}</span>
+      <span class="chip chip-err">Faltas: {{ resumo().faltas }}</span>
+      <span class="chip chip-warn">Justificadas: {{ resumo().justificadas }}</span>
+      <span class="chip">Pendentes: {{ resumo().pendentes }}</span>
+    </div>
+  </header>
+
+  <!-- Filtros -->
+  <section class="filtros">
+    <label class="field">
+      <span>Turma</span>
+      <select [ngModel]="turmaId()" (ngModelChange)="turmaId.set($event); onTurmaChange()">
+        <option [ngValue]="null">— selecione —</option>
+        @for (t of turmas(); track t.id) {
+          <option [ngValue]="t.id">{{ t.nome }} ({{ t.turno }} · {{ t.anoLetivo }})</option>
+        }
+      </select>
+    </label>
+
+    <label class="field">
+      <span>Data</span>
+      <input type="date" [ngModel]="data()"
+             (ngModelChange)="data.set($event); onDataChange()" />
+    </label>
+
+    @if (loadingTurmas() || loadingAlunos()) {
+      <mat-spinner diameter="22"></mat-spinner>
+    }
+  </section>
+
+  @if (dataInvalida()) {
+    <section class="data-bloqueada">
+      <mat-icon>block</mat-icon>
+      <span>{{ dataInvalida() }} Frequência não pode ser lançada nesta data.</span>
+    </section>
+  }
+  @if (!dataInvalida() && anoBloqueado()) {
+    <section class="data-bloqueada">
+      <mat-icon>lock</mat-icon>
+      <span>Ano letivo encerrado. Frequência só pode ser consultada, não editada.</span>
+    </section>
+  }
+
+  <!-- Carrossel opções extras -->
+  @if (!anoBloqueado() && !dataInvalida()) {
+  <section class="carrossel-wrap">
+    <div class="carrossel-label">
+      Motivo (3ª opção — conta como falta, registrada para relatório):
+    </div>
+    <div class="carrossel">
+      <button class="car-nav" (click)="carrosselPrev()" aria-label="anterior">‹</button>
+      <div class="car-track">
+        @for (op of opcoesCustom; track op.id) {
+          <button
+            class="car-item"
+            [class.car-active]="op.id === opcaoCustomAtiva()"
+            (click)="selecionarOpcaoCarrossel(op.id)"
+          >
+            <mat-icon>{{ op.icon }}</mat-icon>
+            <span>{{ op.label }}</span>
+          </button>
+        }
+      </div>
+      <button class="car-nav" (click)="carrosselNext()" aria-label="próximo">›</button>
+    </div>
+  </section>
+  }
+
+  <!-- Toolbar marcação em massa -->
+  @if (linhas().length > 0) {
+    <section class="toolbar">
+      <span class="tb-hint">
+        @if (algumSelecionado()) { Aplicar aos selecionados: }
+        @else                    { Aplicar a todos: }
+      </span>
+      <button class="btn btn-ok"   (click)="marcarTodos('PRESENTE')">
+        <mat-icon>check_circle</mat-icon> Presente
+      </button>
+      <button class="btn btn-err"  (click)="marcarTodos('FALTOU')">
+        <mat-icon>cancel</mat-icon> Faltou
+      </button>
+    </section>
+  }
+
+  <!-- Tabela alunos -->
+  @if (linhas().length > 0) {
+    <section class="tabela">
+      <div class="row row-head">
+        <div class="cell-check">
+          <input type="checkbox" [checked]="todosSelecionados()" (change)="toggleTodos()" />
+        </div>
+        <div class="cell-nome">Aluno</div>
+        <div class="cell-status">Status da Frequência</div>
+      </div>
+
+      @for (l of linhas(); track l.alunoId) {
+        <div class="row" [class.row-selected]="l.selecionado">
+          <div class="cell-check">
+            <input type="checkbox" [checked]="l.selecionado" (change)="toggleLinha(l.alunoId)" />
+          </div>
+          <div class="cell-nome">{{ l.nome }}</div>
+          <div class="cell-status">
+            <button
+              class="st st-ok"
+              [class.st-active]="l.status === 'PRESENTE'"
+              (click)="setStatusLinha(l.alunoId, 'PRESENTE')"
+            >
+              <mat-icon>check_circle</mat-icon> Presente
+            </button>
+            <button
+              class="st st-err"
+              [class.st-active]="l.status === 'FALTOU'"
+              (click)="setStatusLinha(l.alunoId, 'FALTOU')"
+            >
+              <mat-icon>cancel</mat-icon> Faltou
+            </button>
+            <button
+              class="st st-warn"
+              [class.st-active]="l.status === 'OUTRO'"
+              (click)="setStatusLinha(l.alunoId, 'OUTRO')"
+              [title]="'Aplica: ' + labelOpcao(opcaoCustomAtiva())"
+            >
+              <mat-icon>{{ iconOpcao(l.status === 'OUTRO' ? l.opcaoCustomId : opcaoCustomAtiva()) }}</mat-icon>
+              {{ l.status === 'OUTRO' ? labelOpcao(l.opcaoCustomId) : labelOpcao(opcaoCustomAtiva()) }}
+            </button>
+          </div>
+        </div>
+      }
+    </section>
+  } @else if (!anoBloqueado() && !dataInvalida() && turmaId() != null && !loadingAlunos()) {
+    <section class="empty">Nenhum aluno encontrado nessa turma.</section>
+  } @else if (!anoBloqueado() && !dataInvalida() && turmaId() == null) {
+    <section class="empty">Selecione uma turma para listar os alunos.</section>
+  }
+
+  <!-- Footer -->
+  @if (linhas().length > 0) {
+    <footer class="footer">
+      <button
+        class="btn btn-primary"
+        [disabled]="salvando() || anoBloqueado() || !!dataInvalida()"
+        (click)="salvar()"
+      >
+        @if (salvando()) { <mat-spinner diameter="18"></mat-spinner> }
+        @else            { <mat-icon>save</mat-icon> }
+        Salvar Frequência
+      </button>
+    </footer>
+  }
+
+</div>

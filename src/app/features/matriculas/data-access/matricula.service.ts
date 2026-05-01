@@ -5,6 +5,8 @@ import { Observable, Subject, tap } from 'rxjs';
 import { MatriculaRequest } from '../../../core/models/requests/matricula.request';
 import { MatriculaStatusRequest } from '../../../core/models/requests/matricula-status.request';
 import { MatriculaResponse } from '../../../core/models/responses/matricula.response';
+import { RematriculaJanelaResponse } from '../../../core/models/responses/rematricula-janela.response';
+import { RematriculadoResponse } from '../../../core/models/responses/rematriculado.response';
 import { environment } from '../../../../environments/environment';
 
 export interface MatriculaStatsResponse {
@@ -27,7 +29,6 @@ export interface TransferenciaRequest {
 export interface RematriculaRequest {
   alunoId: number;
   turmaDestinoId: number;
-  anoLetivo: number;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -83,13 +84,33 @@ export class MatriculaService {
       .pipe(tap(() => this.matriculaAtualizada.next()));
   }
 
+  updateStatus(id: number, request: MatriculaStatusRequest): Observable<MatriculaResponse> {
+    return this.http.patch<MatriculaResponse>(`${this.apiUrl}/${id}/status`, request)
+      .pipe(tap(() => this.matriculaAtualizada.next()));
+  }
+
+  // ── Rematrícula ──────────────────────────────────────────────────────
+
+  getJanelaRematricula(): Observable<RematriculaJanelaResponse> {
+    return this.http.get<RematriculaJanelaResponse>(`${this.apiUrl}/rematricula/janela`);
+  }
+
+  findRematriculados(): Observable<RematriculadoResponse[]> {
+    return this.http.get<RematriculadoResponse[]>(`${this.apiUrl}/rematriculados`);
+  }
+
   rematricular(request: RematriculaRequest): Observable<MatriculaResponse> {
     return this.http.post<MatriculaResponse>(`${this.apiUrl}/rematricula`, request)
       .pipe(tap(() => this.matriculaAtualizada.next()));
   }
 
-  updateStatus(id: number, request: MatriculaStatusRequest): Observable<MatriculaResponse> {
-    return this.http.patch<MatriculaResponse>(`${this.apiUrl}/${id}/status`, request)
+  editarRematricula(alunoId: number, request: RematriculaRequest): Observable<MatriculaResponse> {
+    return this.http.put<MatriculaResponse>(`${this.apiUrl}/rematricula/${alunoId}`, request)
+      .pipe(tap(() => this.matriculaAtualizada.next()));
+  }
+
+  cancelarRematricula(alunoId: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/rematricula/${alunoId}`)
       .pipe(tap(() => this.matriculaAtualizada.next()));
   }
 }

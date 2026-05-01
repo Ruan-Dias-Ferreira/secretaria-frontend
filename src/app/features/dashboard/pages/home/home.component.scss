@@ -64,6 +64,37 @@
     position: relative;
     z-index: 1;
   }
+
+  &.clickable {
+    cursor: pointer;
+    transition: transform .12s, box-shadow .12s;
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: 4px 5px 0 rgba(0,0,0,.13) !important;
+    }
+
+    ::ng-deep app-event-calendar.display-only {
+      pointer-events: none;
+      user-select: none;
+    }
+  }
+
+  .calendar-cta {
+    margin-top: 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--blue, #2563eb);
+    border: 2px solid var(--blue, #2563eb);
+    background: var(--blue-l, rgba(37,99,235,.08));
+    border-radius: 999px;
+    padding: 4px 12px;
+    width: fit-content;
+
+    mat-icon { font-size: 16px; width: 16px; height: 16px; }
+  }
 }
 
 .mc-label {

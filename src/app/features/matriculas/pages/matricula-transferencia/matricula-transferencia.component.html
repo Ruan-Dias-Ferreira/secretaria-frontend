@@ -1,5 +1,13 @@
 <div class="page-wrap">
-  <div class="page-title"><div class="title-icon">↔️</div><span>Transferência</span></div>
+  <div class="page-title">
+    <div class="title-icon">↔️</div>
+    <span>Transferência Externa</span>
+  </div>
+
+  <div class="info-card">
+    Esta tela registra a transferência do aluno para <strong>outra escola</strong>.
+    Para mover um aluno entre turmas da mesma escola, utilize a opção <strong>Realocação</strong>.
+  </div>
 
   <div class="section-label">ALUNO</div>
   @if (!alunoSelecionado()) {
@@ -34,34 +42,13 @@
 
   <div class="section-label">DESTINO DA TRANSFERÊNCIA</div>
   <div [formGroup]="form" class="form-col">
-    <mat-form-field appearance="outline" style="width:220px">
-      <mat-label>Tipo</mat-label>
-      <mat-select formControlName="tipo">
-        @for (t of tipos; track t) { <mat-option [value]="t">{{ t }}</mat-option> }
-      </mat-select>
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Nome da Escola Destino</mat-label>
+      <input matInput formControlName="escolaDestino" maxlength="120" />
+      @if (form.controls.escolaDestino.touched && form.controls.escolaDestino.invalid) {
+        <mat-error>Informe a escola de destino.</mat-error>
+      }
     </mat-form-field>
-
-    @if (isInterna) {
-      <div class="form-row-2">
-        <mat-form-field appearance="outline">
-          <mat-label>Nova Turma</mat-label>
-          <mat-select formControlName="novaTurmaId">
-            @for (t of turmas(); track t.id) { <mat-option [value]="t.id">{{ t.nome }}</mat-option> }
-          </mat-select>
-        </mat-form-field>
-        <mat-form-field appearance="outline">
-          <mat-label>Novo Turno</mat-label>
-          <mat-select formControlName="novoTurno">
-            @for (t of turnos; track t) { <mat-option [value]="t">{{ t }}</mat-option> }
-          </mat-select>
-        </mat-form-field>
-      </div>
-    } @else {
-      <mat-form-field appearance="outline" class="full-width">
-        <mat-label>Nome da Escola Destino</mat-label>
-        <input matInput formControlName="escolaDestino" />
-      </mat-form-field>
-    }
 
     <div class="form-row-2">
       <mat-form-field appearance="outline">
