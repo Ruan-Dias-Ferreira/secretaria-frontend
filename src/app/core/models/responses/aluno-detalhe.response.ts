@@ -10,6 +10,8 @@ export interface AlunoDetalheResponse {
   email: string;
   telefone?: string;
   telefoneResponsavel: string;
+  localNascimento?: string;
+  nacionalidade?: string;
   endereco: EnderecoDto;
   certidaoNascimento?: CertidaoNascimentoDto;
   mae?: ResponsavelDto;

@@ -4,7 +4,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { debounceTime, distinctUntilChanged, switchMap, of, catchError } from 'rxjs';
+import { of, catchError } from 'rxjs';
 
 import { MatStepperModule }         from '@angular/material/stepper';
 import { MatButtonModule }          from '@angular/material/button';
@@ -63,8 +63,6 @@ export class MatriculaFormComponent {
 
   protected readonly anoLetivo  = new Date().getFullYear();
   protected readonly documentos = DOCUMENTOS_LIST;
-  protected readonly turnos     = ['Manhã', 'Tarde', 'Noite'];
-  protected readonly series     = ['1º Ano', '2º Ano', '3º Ano'];
   protected readonly situacoes  = [
     { value: StatusMatricula.ATIVA,      label: 'Ativa' },
     { value: StatusMatricula.DESISTENTE, label: 'Aguardando documentação' },
@@ -79,6 +77,28 @@ export class MatriculaFormComponent {
   protected readonly submitting      = signal(false);
   protected readonly turmas          = signal<TurmaResponse[]>([]);
   protected readonly turmasFiltradas = signal<TurmaResponse[]>([]);
+
+  protected readonly turmasDoAno = computed(() =>
+    this.turmas().filter(t => t.anoLetivo === this.anoLetivo)
+  );
+  protected readonly series = computed(() =>
+    Array.from(new Set(this.turmasDoAno().map(t => t.curso).filter(Boolean))).sort()
+  );
+  protected readonly turnosDaSerie = signal<string[]>([]);
+  private readonly TURNO_LABELS: Record<string, string> = {
+    MATUTINO: 'Matutino', VESPERTINO: 'Vespertino',
+    NOTURNO: 'Noturno',   INTEGRAL: 'Integral',
+    MANHA: 'Matutino',    TARDE: 'Vespertino', NOITE: 'Noturno',
+  };
+  protected turnoLabel(v: string | null | undefined): string {
+    if (!v) return '';
+    return this.TURNO_LABELS[v] ?? v;
+  }
+
+  protected turmaSelecionadaNome(): string {
+    const id = this.step2Form.controls.turmaId.value;
+    return this.turmasFiltradas().find(t => t.id === id)?.nome ?? '';
+  }
 
   protected readonly docChecks = signal<Record<string, boolean>>(
     Object.fromEntries(DOCUMENTOS_LIST.map(d => [d, false]))
@@ -103,33 +123,46 @@ export class MatriculaFormComponent {
   constructor() {
     this.turmaSvc.findAll().pipe(takeUntilDestroyed(this.destroyRef)).subscribe(t => {
       this.turmas.set(t);
-      this.turmasFiltradas.set(t);
-    });
-
-    this.busca.valueChanges.pipe(
-      debounceTime(350),
-      distinctUntilChanged(),
-      switchMap(q => {
-        if (!q || q.length < 2) {
-          this.buscaResults.set([]); this.showDropdown.set(false); return of([]);
-        }
-        this.searching.set(true);
-        return this.alunoSvc.search(q).pipe(catchError(() => of([])));
-      }),
-      takeUntilDestroyed(this.destroyRef),
-    ).subscribe(r => {
-      this.buscaResults.set(r as AlunoResponse[]);
-      this.showDropdown.set((r as AlunoResponse[]).length > 0);
-      this.searching.set(false);
+      this.turmasFiltradas.set([]);
     });
 
     this.step2Form.controls.serie.valueChanges.pipe(
       takeUntilDestroyed(this.destroyRef),
     ).subscribe(serie => {
-      const all = this.turmas();
-      const f = all.filter(t => !serie || t.curso?.includes(serie) || t.nome?.includes(serie));
-      this.turmasFiltradas.set(f.length ? f : all);
+      const turnos = Array.from(new Set(
+        this.turmasDoAno().filter(t => t.curso === serie).map(t => t.turno).filter(Boolean)
+      )).sort();
+      this.turnosDaSerie.set(turnos);
+      this.turmasFiltradas.set([]);
+      this.step2Form.controls.turno.reset('');
       this.step2Form.controls.turmaId.reset(0);
+    });
+
+    this.step2Form.controls.turno.valueChanges.pipe(
+      takeUntilDestroyed(this.destroyRef),
+    ).subscribe(turno => {
+      const serie = this.step2Form.controls.serie.value;
+      const f = this.turmasDoAno().filter(t => t.curso === serie && t.turno === turno);
+      this.turmasFiltradas.set(f);
+      this.step2Form.controls.turmaId.reset(0);
+    });
+  }
+
+  protected buscar(): void {
+    const q = (this.busca.value ?? '').trim();
+    if (q.length < 2) {
+      this.buscaResults.set([]);
+      this.showDropdown.set(false);
+      return;
+    }
+    this.searching.set(true);
+    this.alunoSvc.search(q).pipe(
+      catchError(() => of([] as AlunoResponse[])),
+      takeUntilDestroyed(this.destroyRef),
+    ).subscribe((r: AlunoResponse[]) => {
+      this.buscaResults.set(r);
+      this.showDropdown.set(true);
+      this.searching.set(false);
     });
   }
 

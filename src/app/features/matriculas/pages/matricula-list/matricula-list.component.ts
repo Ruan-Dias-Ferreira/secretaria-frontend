@@ -69,12 +69,11 @@ export class MatriculaListComponent implements OnInit {
 
   ngOnInit(): void {
     this.carregarStats();
-    this.carregarTodos();
 
     this.searchCtrl.valueChanges.pipe(
       debounceTime(400), distinctUntilChanged(),
       switchMap(q => {
-        if (!q) { this.carregarTodos(); return of(null); }
+        if (!q) { this.matriculas.set([]); return of(null); }
         this.loading.set(true);
         return this.svc.search(q).pipe(catchError(() => of([])));
       }),
@@ -84,7 +83,10 @@ export class MatriculaListComponent implements OnInit {
     });
 
     this.route.queryParams.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(p => {
-      if (p['situacao']) this.filtroAtivo.set(p['situacao'] as StatusMatricula);
+      if (p['situacao']) {
+        this.filtroAtivo.set(p['situacao'] as StatusMatricula);
+        this.carregarTodos();
+      }
     });
   }
 
@@ -103,6 +105,11 @@ export class MatriculaListComponent implements OnInit {
 
   protected toggleFiltro(status: StatusMatricula): void {
     this.filtroAtivo.update(v => v === status ? null : status);
+    if (this.filtroAtivo() !== null) {
+      this.carregarTodos();
+    } else {
+      this.matriculas.set([]);
+    }
   }
 
   protected toggleExpand(key: string): void {

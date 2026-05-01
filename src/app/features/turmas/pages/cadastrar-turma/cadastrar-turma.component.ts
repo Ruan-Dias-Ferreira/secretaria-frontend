@@ -44,17 +44,17 @@ export class CadastrarTurmaComponent {
   protected readonly anoProximo = this.anoAtual + 1;
 
   protected readonly turnos = [
-    { value: 'MANHA',    label: 'Manhã' },
-    { value: 'TARDE',    label: 'Tarde' },
-    { value: 'NOITE',    label: 'Noite' },
-    { value: 'INTEGRAL', label: 'Integral' },
+    { value: 'MATUTINO',   label: 'Matutino' },
+    { value: 'VESPERTINO', label: 'Vespertino' },
+    { value: 'NOTURNO',    label: 'Noturno' },
+    { value: 'INTEGRAL',   label: 'Integral' },
   ];
 
-  protected readonly cursos = [
-    'Educação Infantil',
-    'Ensino Fundamental I',
-    'Ensino Fundamental II',
-    'Ensino Médio',
+  protected readonly series = [
+    'Maternal', 'Pré I', 'Pré II',
+    '1º Ano', '2º Ano', '3º Ano', '4º Ano', '5º Ano',
+    '6º Ano', '7º Ano', '8º Ano', '9º Ano',
+    '1º EM', '2º EM', '3º EM',
     'EJA',
   ];
 
@@ -77,10 +77,10 @@ export class CadastrarTurmaComponent {
   });
 
   protected form = this.fb.group({
-    nome:      ['', [Validators.required, Validators.minLength(2), Validators.maxLength(60)]],
-    anoLetivo: [this.anoAtual, [Validators.required]],
-    turno:     ['MANHA', [Validators.required]],
     curso:     ['', [Validators.required]],
+    nome:      ['', [Validators.required, Validators.minLength(1), Validators.maxLength(20)]],
+    turno:     ['MATUTINO', [Validators.required]],
+    anoLetivo: [this.anoAtual, [Validators.required]],
   });
 
   constructor() {
@@ -121,7 +121,7 @@ export class CadastrarTurmaComponent {
 
   protected limpar(): void {
     this.form.reset({
-      nome: '', anoLetivo: this.anoAtual, turno: 'MANHA', curso: '',
+      curso: '', nome: '', turno: 'MATUTINO', anoLetivo: this.anoAtual,
     });
   }
 

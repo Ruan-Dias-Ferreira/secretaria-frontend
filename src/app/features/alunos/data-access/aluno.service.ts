@@ -6,6 +6,8 @@ import { AlunoRequest } from '../../../core/models/requests/aluno.request';
 import { AlunoResponse } from '../../../core/models/responses/aluno.response';
 import { AlunoDetalheResponse } from '../../../core/models/responses/aluno-detalhe.response';
 import { FrequenciaResumoResponse } from '../../../core/models/responses/frequencia-resumo.response';
+import { AlunoSituacaoResponse } from '../../../core/models/responses/aluno-situacao.response';
+import { DocumentoStatusResponse, TipoDocumento } from '../../../core/models/responses/documento-status.response';
 import { environment } from '../../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
@@ -47,5 +49,27 @@ export class AlunoService {
 
   getFrequencias(id: number): Observable<FrequenciaResumoResponse[]> {
     return this.http.get<FrequenciaResumoResponse[]>(`${this.apiUrl}/${id}/frequencias`);
+  }
+
+  getSituacao(id: number): Observable<AlunoSituacaoResponse> {
+    return this.http.get<AlunoSituacaoResponse>(`${this.apiUrl}/${id}/situacao`);
+  }
+
+  getPendenciasResumo(): Observable<{ alunosDocPendentes: number; alunosInfoPendente: number; totalAlunos: number }> {
+    return this.http.get<{ alunosDocPendentes: number; alunosInfoPendente: number; totalAlunos: number }>(
+      `${this.apiUrl}/pendencias-resumo`
+    );
+  }
+
+  getDocumentosStatus(id: number): Observable<DocumentoStatusResponse[]> {
+    return this.http.get<DocumentoStatusResponse[]>(`${environment.apiUrl}/documento/aluno/${id}/status`);
+  }
+
+  toggleDocumento(alunoId: number, tipo: TipoDocumento, entregue: boolean): Observable<DocumentoStatusResponse> {
+    return this.http.put<DocumentoStatusResponse>(
+      `${environment.apiUrl}/documento/aluno/${alunoId}/tipo/${tipo}`,
+      null,
+      { params: new HttpParams().set('entregue', String(entregue)) }
+    );
   }
 }

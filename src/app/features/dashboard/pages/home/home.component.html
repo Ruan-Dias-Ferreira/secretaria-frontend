@@ -35,7 +35,7 @@
       Pendências e Alertas
     </div>
     <div class="alerts-list">
-      @for (alert of alerts; track alert.title) {
+      @for (alert of alerts(); track alert.title) {
         <div
           class="alert-card"
           [class.alert-err]="alert.type === 'err'"

@@ -48,6 +48,16 @@
             <mat-error>Obrigatório.</mat-error>
           </mat-form-field>
 
+          <mat-form-field appearance="outline">
+            <mat-label>Local de Nascimento (opcional)</mat-label>
+            <input matInput formControlName="localNascimento" placeholder="Cidade/UF" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Nacionalidade (opcional)</mat-label>
+            <input matInput formControlName="nacionalidade" placeholder="Brasileira" />
+          </mat-form-field>
+
           <mat-form-field appearance="outline" class="full">
             <mat-label>Email (opcional)</mat-label>
             <input matInput formControlName="email" />
@@ -175,6 +185,10 @@
               <mat-label>Telefone</mat-label>
               <input matInput formControlName="telefone" appTelefoneMask maxlength="15" placeholder="(00) 00000-0000" />
             </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Profissão</mat-label>
+              <input matInput formControlName="profissao" />
+            </mat-form-field>
           </div>
         </mat-expansion-panel>
 
@@ -203,6 +217,10 @@
             <mat-form-field appearance="outline">
               <mat-label>Telefone</mat-label>
               <input matInput formControlName="telefone" appTelefoneMask maxlength="15" placeholder="(00) 00000-0000" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Profissão</mat-label>
+              <input matInput formControlName="profissao" />
             </mat-form-field>
           </div>
         </mat-expansion-panel>
@@ -233,6 +251,10 @@
             <mat-form-field appearance="outline">
               <mat-label>Telefone</mat-label>
               <input matInput formControlName="telefone" appTelefoneMask maxlength="15" placeholder="(00) 00000-0000" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Profissão</mat-label>
+              <input matInput formControlName="profissao" />
             </mat-form-field>
           </div>
         </mat-expansion-panel>

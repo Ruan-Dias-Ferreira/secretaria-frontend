@@ -25,6 +25,11 @@
   &.active { box-shadow: 0 0 0 2px var(--mat-sys-primary); }
 }
 
+.stat-card.stat-card--readonly {
+  cursor: default;
+  &:hover { box-shadow: none; }
+}
+
 .stat-card.green .stat-value { color: var(--app-success); }
 .stat-card.blue  .stat-value { color: var(--app-info); }
 .stat-card.red   .stat-value { color: var(--app-err); }

@@ -40,7 +40,8 @@ import { FrequenciaModalComponent, FrequenciaDialogData } from '../../components
   templateUrl: './aluno-list.component.html',
   styles: [`
     table { width: 100%; }
-    .actions-cell { display: flex; gap: 4px; justify-content: flex-end; }
+    .clickable-row { cursor: pointer; }
+    .clickable-row:hover { background: rgba(0,0,0,0.04); }
     h1 { margin: 0; font-size: 24px; font-weight: 500; }
     .search-bar { display: flex; gap: 12px; align-items: flex-start; margin-top: 16px; }
     .search-bar mat-form-field { flex: 1; }
@@ -53,7 +54,7 @@ export class AlunoListComponent {
   protected buscaRealizada = signal(false);
   protected termoBusca = signal('');
 
-  readonly displayedColumns = ['id', 'nome', 'cpf', 'email', 'acoes'];
+  readonly displayedColumns = ['id', 'nome', 'cpf', 'responsavel'];
 
   private alunoService = inject(AlunoService);
   private auth = inject(AuthService);
@@ -94,6 +95,7 @@ export class AlunoListComponent {
 
   abrirNovo(): void { this.router.navigate(['/alunos/novo']); }
   abrirEdicao(id: number): void { this.router.navigate(['/alunos', id, 'editar']); }
+  abrirPerfil(id: number): void { this.router.navigate(['/alunos', id, 'perfil']); }
 
   abrirDetalhe(id: number): void {
     this.dialog.open(AlunoDetailComponent, {

@@ -63,6 +63,12 @@ export const routes: Routes = [
           import('./features/alunos/pages/aluno-form-page/aluno-form-page.component')
             .then(m => m.AlunoFormPageComponent),
       },
+      {
+        path: 'alunos/:id/perfil', ...both,
+        loadComponent: () =>
+          import('./features/alunos/pages/aluno-perfil/aluno-perfil.component')
+            .then(m => m.AlunoPerfilComponent),
+      },
 
       // ── Matrículas ──────────────────────────────────────────────────
       { path: 'matriculas', redirectTo: 'matriculas/nova', pathMatch: 'full' },

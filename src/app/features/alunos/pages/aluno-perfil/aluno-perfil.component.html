@@ -1,0 +1,168 @@
+<div class="perfil-wrap">
+  <div class="perfil-header">
+    <button mat-icon-button (click)="voltar()" matTooltip="Voltar">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <h1>{{ aluno()?.nome || 'Perfil do aluno' }}</h1>
+    <span class="spacer"></span>
+    <button mat-stroked-button color="primary" (click)="editar()" *ngIf="aluno()">
+      <mat-icon>edit</mat-icon>
+      Editar
+    </button>
+  </div>
+
+  @if (loading()) {
+    <div class="loading-center"><mat-spinner diameter="40"></mat-spinner></div>
+  } @else if (aluno()) {
+    <mat-tab-group animationDuration="200ms" class="perfil-tabs">
+
+      <!-- ABA 1: GERAL -->
+      <mat-tab label="Geral">
+        <div class="tab-body">
+          <dl class="info-grid">
+            <dt>ID</dt><dd>{{ aluno()!.id }}</dd>
+            <dt>Idade</dt><dd>{{ idade() != null ? idade() + ' anos' : '—' }}</dd>
+            <dt>Data de Nascimento</dt><dd>{{ aluno()!.dataNascimento | date:'dd/MM/yyyy' }}</dd>
+            <dt>Local de Nascimento</dt><dd>{{ aluno()!.localNascimento || '—' }}</dd>
+            <dt>Nacionalidade</dt><dd>{{ aluno()!.nacionalidade || '—' }}</dd>
+            <dt>Email</dt><dd>{{ aluno()!.email || '—' }}</dd>
+            <dt>Telefone</dt><dd>{{ aluno()!.telefone || '—' }}</dd>
+            <dt>Endereço</dt><dd>{{ formatEndereco() }}</dd>
+          </dl>
+        </div>
+      </mat-tab>
+
+      <!-- ABA 2: PAIS / RESPONSÁVEIS -->
+      <mat-tab label="Pais / Responsáveis">
+        <div class="tab-body">
+          @for (resp of [
+            {label:'Mãe', data: aluno()!.mae},
+            {label:'Pai', data: aluno()!.pai},
+            {label:'Responsável Legal', data: aluno()!.responsavelLegal}
+          ]; track resp.label) {
+            <mat-card class="resp-card" *ngIf="resp.data?.nome">
+              <mat-card-header>
+                <mat-card-title>{{ resp.label }}</mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                <dl class="info-grid">
+                  <dt>Nome</dt><dd>{{ resp.data!.nome || '—' }}</dd>
+                  <dt>CPF</dt><dd>{{ resp.data!.cpf || '—' }}</dd>
+                  <dt>RG</dt><dd>{{ resp.data!.rg || '—' }}</dd>
+                  <dt>Título de Eleitor</dt><dd>{{ resp.data!.tituloEleitor || '—' }}</dd>
+                  <dt>Telefone</dt><dd>{{ resp.data!.telefone || '—' }}</dd>
+                  <dt>Profissão</dt><dd>{{ resp.data!.profissao || '—' }}</dd>
+                </dl>
+              </mat-card-content>
+            </mat-card>
+          }
+          @if (!aluno()!.mae?.nome && !aluno()!.pai?.nome && !aluno()!.responsavelLegal?.nome) {
+            <p class="empty">Nenhum responsável cadastrado.</p>
+          }
+        </div>
+      </mat-tab>
+
+      <!-- ABA 3: DOCUMENTOS -->
+      <mat-tab label="Documentos">
+        <div class="tab-body">
+          <div class="doc-summary">
+            <mat-chip color="warn" [highlighted]="pendentes() > 0">
+              {{ pendentes() }} pendente(s)
+            </mat-chip>
+            <span class="hint">Marque os documentos entregues. As mudanças são salvas automaticamente.</span>
+          </div>
+
+          <div class="doc-list">
+            @for (doc of documentos(); track doc.tipo) {
+              <div class="doc-row" [class.entregue]="doc.entregue">
+                <mat-checkbox
+                  [checked]="doc.entregue"
+                  [disabled]="togglingTipo() === doc.tipo"
+                  (change)="toggleDoc(doc, $event.checked)"
+                >
+                  {{ labelTipo(doc.tipo) }}
+                </mat-checkbox>
+                <span class="data-emissao">
+                  @if (doc.entregue && doc.dataEmissao) {
+                    Entregue em {{ doc.dataEmissao | date:'dd/MM/yyyy' }}
+                  } @else if (!doc.entregue) {
+                    <span class="pendente">Pendente</span>
+                  }
+                </span>
+              </div>
+            }
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- ABA 4: SITUAÇÃO -->
+      <mat-tab label="Situação">
+        <div class="tab-body">
+          @if (situacao()) {
+            <div class="sit-cards">
+              <mat-card class="sit-card">
+                <mat-card-content>
+                  <div class="sit-label">Situação atual</div>
+                  <div class="sit-value">{{ statusLabel(situacao()!.statusAtual) }}</div>
+                </mat-card-content>
+              </mat-card>
+              <mat-card class="sit-card">
+                <mat-card-content>
+                  <div class="sit-label">Ano letivo</div>
+                  <div class="sit-value">{{ situacao()!.anoLetivoAtual || '—' }}</div>
+                </mat-card-content>
+              </mat-card>
+              <mat-card class="sit-card">
+                <mat-card-content>
+                  <div class="sit-label">Turma</div>
+                  <div class="sit-value">{{ situacao()!.turmaNomeAtual || '—' }}</div>
+                  <div class="sit-sub">{{ situacao()!.cursoAtual }} · {{ situacao()!.turnoAtual }}</div>
+                </mat-card-content>
+              </mat-card>
+              <mat-card class="sit-card">
+                <mat-card-content>
+                  <div class="sit-label">Frequência média</div>
+                  <div class="sit-value">
+                    {{ situacao()!.percentualFrequencia != null ? (situacao()!.percentualFrequencia | number:'1.0-1') + '%' : '—' }}
+                  </div>
+                </mat-card-content>
+              </mat-card>
+              <mat-card class="sit-card">
+                <mat-card-content>
+                  <div class="sit-label">Matrículas</div>
+                  <div class="sit-value">{{ situacao()!.matriculasAtivas }} ativa(s)</div>
+                  <div class="sit-sub">de {{ situacao()!.totalMatriculas }} no total</div>
+                </mat-card-content>
+              </mat-card>
+              <mat-card class="sit-card">
+                <mat-card-content>
+                  <div class="sit-label">Documentos pendentes</div>
+                  <div class="sit-value">{{ pendentes() }}</div>
+                </mat-card-content>
+              </mat-card>
+            </div>
+
+            @if (situacao()!.historicoMatriculas.length > 0) {
+              <h3 class="sit-section">Histórico de matrículas</h3>
+              <ul class="hist-list">
+                @for (m of situacao()!.historicoMatriculas; track m.id) {
+                  <li>
+                    <strong>{{ m.anoLetivo }}</strong> —
+                    {{ m.turmaNome || ('Turma #' + m.turmaId) }}
+                    @if (m.curso) { · {{ m.curso }} }
+                    @if (m.turno) { · {{ m.turno }} }
+                    <span class="badge">{{ statusLabel(m.status) }}</span>
+                  </li>
+                }
+              </ul>
+            }
+          } @else {
+            <p class="empty">Nenhuma informação de situação disponível.</p>
+          }
+        </div>
+      </mat-tab>
+    </mat-tab-group>
+  } @else {
+    <p class="empty">Aluno não encontrado.</p>
+  }
+</div>

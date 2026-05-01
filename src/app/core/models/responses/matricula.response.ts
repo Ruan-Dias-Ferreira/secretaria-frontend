@@ -1,9 +1,13 @@
 import { StatusMatricula } from "../enums/status-matricula.enum";
 export interface MatriculaResponse{
-anoLetivo:number;
-turmaId:number;
-alunoId:number;
-status:StatusMatricula;
 id:number;
-
+anoLetivo:number;
+status:StatusMatricula;
+alunoId:number;
+alunoNome?:string;
+alunoCpf?:string;
+turmaId:number;
+turmaNome?:string;
+turno?:string;
+curso?:string;
 }

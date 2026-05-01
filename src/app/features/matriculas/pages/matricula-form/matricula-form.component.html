@@ -31,23 +31,33 @@
             <div class="busca-wrapper">
               <mat-form-field appearance="outline" class="busca-field">
                 <mat-label>Buscar por Nome ou CPF</mat-label>
-                <input matInput [formControl]="busca" autocomplete="off" />
-                <mat-icon matSuffix>search</mat-icon>
+                <input matInput [formControl]="busca" autocomplete="off"
+                       (keydown.enter)="buscar(); $event.preventDefault()" />
+                <button mat-icon-button matSuffix type="button" aria-label="Buscar"
+                        (click)="buscar()">
+                  <mat-icon>search</mat-icon>
+                </button>
               </mat-form-field>
               @if (searching()) {
                 <div class="busca-searching">
                   <mat-spinner diameter="20"></mat-spinner> Buscando…
                 </div>
               }
-              @if (showDropdown() && buscaResults().length) {
-                <div class="busca-dropdown">
-                  @for (a of buscaResults(); track a.id) {
-                    <div class="busca-item" (click)="selecionarAluno(a)">
-                      <span class="bi-nome">{{ a.nome }}</span>
-                      <span class="bi-sub">CPF: {{ a.cpf }}</span>
-                    </div>
-                  }
-                </div>
+              @if (showDropdown()) {
+                @if (buscaResults().length) {
+                  <div class="busca-dropdown">
+                    @for (a of buscaResults(); track a.id) {
+                      <div class="busca-item" (click)="selecionarAluno(a)">
+                        <span class="bi-nome">{{ a.nome }}</span>
+                        <span class="bi-sub">CPF: {{ a.cpf }}</span>
+                      </div>
+                    }
+                  </div>
+                } @else if (!searching()) {
+                  <div class="busca-dropdown">
+                    <div class="busca-item bi-empty">Nenhum aluno encontrado</div>
+                  </div>
+                }
               }
             </div>
           }
@@ -100,24 +110,33 @@
             <mat-form-field appearance="outline">
               <mat-label>Série / Ano</mat-label>
               <mat-select formControlName="serie">
-                @for (s of series; track s) {
+                @for (s of series(); track s) {
                   <mat-option [value]="s">{{ s }}</mat-option>
                 }
-              </mat-select>
-            </mat-form-field>
-            <mat-form-field appearance="outline">
-              <mat-label>Turma</mat-label>
-              <mat-select formControlName="turmaId">
-                @for (t of turmasFiltradas(); track t.id) {
-                  <mat-option [value]="t.id">{{ t.nome }}</mat-option>
+                @if (!series().length) {
+                  <mat-option disabled>Nenhuma série cadastrada para {{ anoLetivo }}</mat-option>
                 }
               </mat-select>
             </mat-form-field>
             <mat-form-field appearance="outline">
               <mat-label>Turno</mat-label>
-              <mat-select formControlName="turno">
-                @for (t of turnos; track t) {
-                  <mat-option [value]="t">{{ t }}</mat-option>
+              <mat-select formControlName="turno" [disabled]="!step2Form.controls.serie.value">
+                @for (t of turnosDaSerie(); track t) {
+                  <mat-option [value]="t">{{ turnoLabel(t) }}</mat-option>
+                }
+                @if (step2Form.controls.serie.value && !turnosDaSerie().length) {
+                  <mat-option disabled>Nenhum turno para esta série</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Turma</mat-label>
+              <mat-select formControlName="turmaId" [disabled]="!step2Form.controls.turno.value">
+                @for (t of turmasFiltradas(); track t.id) {
+                  <mat-option [value]="t.id">{{ t.nome }}</mat-option>
+                }
+                @if (step2Form.controls.turno.value && !turmasFiltradas().length) {
+                  <mat-option disabled>Nenhuma turma</mat-option>
                 }
               </mat-select>
             </mat-form-field>
@@ -175,7 +194,7 @@
               <span class="badge badge-green">Selecionado</span>
             </div>
             <div class="ra-info">
-              Série: {{ step2Form.value.serie }} · Turno: {{ step2Form.value.turno }}
+              Série: {{ step2Form.value.serie }} · Turma: {{ turmaSelecionadaNome() }} · Turno: {{ turnoLabel(step2Form.value.turno) }}
             </div>
             <div class="ra-info">
               <span class="badge badge-green">{{ step2Form.value.situacao }}</span>

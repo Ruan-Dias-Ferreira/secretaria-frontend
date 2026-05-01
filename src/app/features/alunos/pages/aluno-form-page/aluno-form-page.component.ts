@@ -122,7 +122,8 @@ export class AlunoFormPageComponent {
       cpf: [''],
       rg: [''],
       tituloEleitor: [''],
-      telefone: ['']
+      telefone: [''],
+      profissao: ['']
     });
   }
 
@@ -135,6 +136,8 @@ export class AlunoFormPageComponent {
     email: [''],
     telefone: [''],
     telefoneResponsavel: ['', [Validators.required]],
+    localNascimento: [''],
+    nacionalidade: [''],
     endereco: this.fb.group({
       rua: ['', [Validators.required]],
       bairro: ['', [Validators.required]],
@@ -169,6 +172,7 @@ export class AlunoFormPageComponent {
       .subscribe({
         next: (aluno) => {
           this.form.patchValue(aluno as any);
+          this.form.get('nome')?.disable();
           this.loading.set(false);
         },
         error: () => { this.loading.set(false); }
@@ -177,7 +181,7 @@ export class AlunoFormPageComponent {
 
   private nullifyVazio(r: any): any {
     if (!r) return null;
-    const algumPreenchido = ['nome','cpf','rg','tituloEleitor','telefone']
+    const algumPreenchido = ['nome','cpf','rg','tituloEleitor','telefone','profissao']
       .some(k => (r[k] || '').toString().trim().length > 0);
     return algumPreenchido ? r : null;
   }

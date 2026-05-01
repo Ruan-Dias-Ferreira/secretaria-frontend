@@ -4,6 +4,7 @@ export interface ResponsavelDto {
   rg?: string;
   tituloEleitor?: string;
   telefone?: string;
+  profissao?: string;
 }
 
 export interface CertidaoNascimentoDto {
@@ -30,6 +31,8 @@ export interface AlunoRequest {
   email: string;
   telefone?: string;
   telefoneResponsavel: string;
+  localNascimento?: string;
+  nacionalidade?: string;
   endereco: EnderecoDto;
   certidaoNascimento?: CertidaoNascimentoDto;
   mae?: ResponsavelDto;

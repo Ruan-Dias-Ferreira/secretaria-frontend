@@ -7,7 +7,7 @@
 
   <!-- Cards de situação -->
   <div class="stats-row">
-    <div class="stat-card" [class.active]="filtroAtivo() === null" (click)="filtroAtivo.set(null)">
+    <div class="stat-card stat-card--readonly">
       <div class="stat-value">{{ stats().total }}</div>
       <div class="stat-label">Total</div>
     </div>
@@ -48,15 +48,15 @@
       <table mat-table [dataSource]="filtradas()" class="result-table">
         <ng-container matColumnDef="aluno">
           <th mat-header-cell *matHeaderCellDef>Aluno</th>
-          <td mat-cell *matCellDef="let m">Aluno #{{ m.alunoId }}</td>
+          <td mat-cell *matCellDef="let m">{{ m.alunoNome || ('Aluno #' + m.alunoId) }}</td>
         </ng-container>
         <ng-container matColumnDef="turma">
           <th mat-header-cell *matHeaderCellDef>Turma</th>
-          <td mat-cell *matCellDef="let m">{{ m.turmaId }}</td>
+          <td mat-cell *matCellDef="let m">{{ m.turmaNome || m.turmaId }}</td>
         </ng-container>
         <ng-container matColumnDef="turno">
           <th mat-header-cell *matHeaderCellDef>Turno</th>
-          <td mat-cell *matCellDef="let m">—</td>
+          <td mat-cell *matCellDef="let m">{{ m.turno || '—' }}</td>
         </ng-container>
         <ng-container matColumnDef="situacao">
           <th mat-header-cell *matHeaderCellDef>Situação</th>
@@ -86,7 +86,7 @@
       </div>
       @for (grupo of turmasAgrupadas(); track grupo.turmaId) {
         <div class="turma-group-card" (click)="toggleExpand(String(grupo.turmaId))">
-          <span>Turma #{{ grupo.turmaId }}</span>
+          <span>{{ (grupo.alunos[0]?.curso ? grupo.alunos[0]?.curso + ' — ' : '') + (grupo.alunos[0]?.turmaNome || ('Turma #' + grupo.turmaId)) + (grupo.alunos[0]?.turno ? ' · ' + grupo.alunos[0]?.turno : '') }}</span>
           <span>{{ grupo.alunos.length }} alunos</span>
           <mat-icon>{{ isExpanded(String(grupo.turmaId)) ? 'expand_less' : 'expand_more' }}</mat-icon>
         </div>
@@ -94,7 +94,7 @@
           <div class="turma-alunos">
             @for (m of grupo.alunos; track m.id) {
               <div class="turma-aluno-row">
-                <span>Aluno #{{ m.alunoId }}</span>
+                <span>{{ m.alunoNome || ('Aluno #' + m.alunoId) }}</span>
                 <span [class]="badgeClass(m.status)">{{ badgeLabel(m.status) }}</span>
                 <span>{{ m.anoLetivo }}</span>
               </div>
@@ -104,7 +104,7 @@
       }
     }
 
-    @if (filtradas().length === 0) {
+    @if (filtradas().length === 0 && (filtroAtivo() || searchCtrl.value)) {
       <div class="empty-state">Nenhuma matrícula encontrada.</div>
     }
   }

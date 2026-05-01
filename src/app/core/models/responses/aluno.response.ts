@@ -5,5 +5,6 @@ export interface AlunoResponse {
     nome: string;
     cpf: string;
     email: string;
+    nomeResponsavel?: string | null;
     rematriculado?: RematriculaInfoResponse | null;
 }
